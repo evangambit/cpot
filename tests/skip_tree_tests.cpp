@@ -52,24 +52,15 @@ std::vector<Row> iter2vec(std::shared_ptr<IteratorInterface<Row>> it) {
   return r;
 }
 
-TEST(SkipTreeTest, InsertIntoEmptyTree) {
-  auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
-  SkipTree<UInt64Row> skipTree(pageManager, kNullPage);
-  skipTree.insert(10);
-  std::vector<UInt64Row> gt = {10};
-  EXPECT_EQ(skipTree.all(), gt);
-}
-
 TEST(SkipTreeTest, ValuesAreOrdered) {
+  std::vector<UInt64Row> A = range(0, 100'000);
+  shuffle(A.begin(), A.end());
   auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
   SkipTree<UInt64Row> skipTree(pageManager, kNullPage);
-  skipTree.insert(4);
-  skipTree.insert(2);
-  skipTree.insert(5);
-  skipTree.insert(3);
-  skipTree.insert(1);
-  std::vector<UInt64Row> gt = {1, 2, 3, 4, 5};
-  EXPECT_EQ(skipTree.all(), gt);
+  for (auto a : A) {
+    skipTree.insert(a);
+  }
+  EXPECT_EQ(skipTree.all(), range(0, 100'000));
 }
 
 TEST(SkipTreeTest, RandomDelete) {
