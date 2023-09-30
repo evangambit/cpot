@@ -33,6 +33,14 @@ void shuffle(RandomIt first, RandomIt last) {
   }
 }
 
+std::vector<UInt64Row> range(uint64_t low, uint64_t high) {
+  std::vector<UInt64Row> r;
+  for (uint64_t i = low; i < high; ++i) {
+    r.push_back(UInt64Row{i});
+  }
+  return r;
+}
+
 template<class Row>
 std::vector<Row> iter2vec(std::shared_ptr<IteratorInterface<Row>> it) {
   std::vector<Row> r;
@@ -88,6 +96,20 @@ TEST(SkipTreeTest, RandomDelete) {
   }
 
   ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
+}
+
+TEST(SkipTreeTest, Range) {
+  const uint64_t high = 1000;
+  auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
+  SkipTree<UInt64Row> tree(pageManager, kNullPage);
+
+  for (uint64_t i = 1; i <= high; ++i) {
+    tree.insert(UInt64Row{i});
+  }
+
+  std::vector<UInt64Row> A = tree.range(100, 150);
+
+  ASSERT_EQ(A, range(100, 150));
 }
 
 
