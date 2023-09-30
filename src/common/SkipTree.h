@@ -234,6 +234,16 @@ struct SkipTree {
       if (it < end) {
         return std::make_pair(node, it - vals);
       }
+      // TODO: does the fact that we need this suggest a bug in our implementation?
+      if (vals[0] < query && node->next != kNullPage) {
+        node = pageManager_->load_page(node->next);
+        vals = (node->is_leaf() ? node->value.leaf.rows : node->value.internal.rows);
+        end = vals + node->length;
+        it = std::lower_bound(vals, end, query);
+        if (it < end) {
+          return std::make_pair(node, it - vals);
+        }
+      }
       return std::pair<Node const *, uint16_t>(nullptr, 0);
     }
 
