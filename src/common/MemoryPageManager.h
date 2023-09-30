@@ -11,22 +11,23 @@ template<class Page>
 struct MemoryPageManager : public PageManager<Page> {
   MemoryPageManager() {}
   Page const *load_page(PageLoc loc) override {
-    if (loc >= pages.size()) {
+    if (pages.count(loc) == 0) {
       throw std::runtime_error("");
     }
     return pages.at(loc);
   }
   Page *load_and_modify_page(PageLoc loc) override {
-    if (loc >= pages.size()) {
+    if (pages.count(loc) == 0) {
       throw std::runtime_error("");
     }
     return pages.at(loc);
   }
   void delete_page(PageLoc loc) override {
-    if (loc >= pages.size()) {
+    if (pages.count(loc) == 0) {
       throw std::runtime_error("");
     }
-    // TODO
+    delete pages.at(loc);
+    pages.erase(loc);
   }
   Page *new_page(PageLoc *location = nullptr) override {
     *location = pages.size();
