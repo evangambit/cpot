@@ -84,8 +84,7 @@ struct InvertedIndex {
   InvertedIndex(std::string filename)
   : pageManager(std::make_shared<DiskPageManager<typename SkipTree<Row>::Node>>(filename)),
     headerPageManager(std::make_shared<DiskPageManager<typename SkipTree<TokenRow>::Node>>(filename + ".header")),
-    rarePageManager(std::make_shared<DiskPageManager<typename SkipTree<RareRow>::Node>>(filename + ".rare"))
-  {
+    rarePageManager(std::make_shared<DiskPageManager<typename SkipTree<RareRow>::Node>>(filename + ".rare")) {
     if (headerPageManager->empty()) {
       this->header = std::make_unique<SkipTree<TokenRow>>(headerPageManager, -1);
       assert(this->header->rootLoc_ == 0);
@@ -96,6 +95,25 @@ struct InvertedIndex {
       rareTree = std::make_shared<SkipTree<RareRow>>(rarePageManager, 0);
     }
   }
+
+  // For debugging.
+  InvertedIndex(
+    std::shared_ptr<PageManager<typename SkipTree<Row>::Node>> pageManager,
+    std::shared_ptr<PageManager<typename SkipTree<TokenRow>::Node>> headerPageManager,
+    std::shared_ptr<PageManager<typename SkipTree<RareRow>::Node>> rarePageManager
+  )
+  : pageManager(pageManager), headerPageManager(headerPageManager), rarePageManager(rarePageManager) {
+    if (headerPageManager->empty()) {
+      this->header = std::make_unique<SkipTree<TokenRow>>(headerPageManager, -1);
+      assert(this->header->rootLoc_ == 0);
+      rareTree = std::make_shared<SkipTree<RareRow>>(rarePageManager, -1);
+      assert(rareTree->rootLoc_ == 0);
+    } else {
+      this->header = std::make_unique<SkipTree<TokenRow>>(headerPageManager, 0);
+      rareTree = std::make_shared<SkipTree<RareRow>>(rarePageManager, 0);
+    }
+  }
+
 
   uint64_t currentMemoryUsed() const {
     return headerPageManager->currentMemoryUsed() + pageManager->currentMemoryUsed();
