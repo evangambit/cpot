@@ -524,12 +524,16 @@ struct SkipTree {
     return this->remove(row, false);
   }
 
+  /**
+   * Removes a row from the tree.
+   * Returns true iff the row was found and deleted.
+   */
   bool remove(Row row, bool debug) {
     Node const *kRoot = pageManager_->load_page(rootLoc_);
     kRoot->assert_alive();
     bool result = this->_remove(kRoot, row, debug);
 
-    if (kRoot->length == 1) {
+    if (kRoot->length == 1 && !kRoot->is_leaf()) {
       Node *root = pageManager_->load_and_modify_page(kRoot->self);
       Node *child = pageManager_->load_and_modify_page(kRoot->value.internal.children[0]);
 
@@ -578,6 +582,7 @@ struct SkipTree {
     bool result = this->_remove(kChild, row, debug);
 
     if (kChild->is_too_small()) {
+      assert(knode->length >= 2);
       Node *parent = pageManager_->load_and_modify_page(knode->self);
       Node *child = pageManager_->load_and_modify_page(kChild->self);
       this->_handle_too_small_child(parent, child, idx, debug);

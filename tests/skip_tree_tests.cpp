@@ -103,6 +103,21 @@ TEST(SkipTreeTest, Range) {
   ASSERT_EQ(A, range(100, 150));
 }
 
+TEST(SkipTreeTest, EmptyTree) {
+  const uint64_t high = 100;
+  std::vector<UInt64Row> A = range(0, high);
+  shuffle(A.begin(), A.end());
+  auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
+  SkipTree<UInt64Row> tree(pageManager, kNullPage);
+  for (auto a : A) {
+    tree.insert(a);
+  }
+  for (auto a : A) {
+    ASSERT_TRUE(tree.remove(a));
+  }
+  ASSERT_EQ(tree.all(), std::vector<UInt64Row>());
+}
+
 
 }  // namespace
 

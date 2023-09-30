@@ -12,19 +12,19 @@ struct MemoryPageManager : public PageManager<Page> {
   MemoryPageManager() {}
   Page const *load_page(PageLoc loc) override {
     if (pages.count(loc) == 0) {
-      throw std::runtime_error("");
+      throw std::runtime_error("cannot load_page");
     }
     return pages.at(loc);
   }
   Page *load_and_modify_page(PageLoc loc) override {
     if (pages.count(loc) == 0) {
-      throw std::runtime_error("");
+      throw std::runtime_error("cannot load_and_modify_page");
     }
     return pages.at(loc);
   }
   void delete_page(PageLoc loc) override {
     if (pages.count(loc) == 0) {
-      throw std::runtime_error("");
+      throw std::runtime_error("cannot delete_page");
     }
     delete pages.at(loc);
     pages.erase(loc);
