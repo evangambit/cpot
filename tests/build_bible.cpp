@@ -1,6 +1,3 @@
-// clang++ tests/build_bible.cpp -std=c++2a -O3 -o bible_test
-// rm bible-index*; ./bible_test
-
 #include <cstdint>
 #include <deque>
 #include <iostream>
@@ -26,7 +23,7 @@ int main() {
     std::ifstream testFile("bible.txt");
     std::string line;
 
-    InvertedIndex<UInt64Row> index("bible-index");
+    InvertedIndex<UInt64Row> index("test-index");
 
     uint64_t lineNum = 1;
 
@@ -61,7 +58,7 @@ int main() {
 
   {
     auto t0 = std::chrono::high_resolution_clock::now();
-    InvertedIndex<UInt64Row> index("bible-index");
+    InvertedIndex<UInt64Row> index("test-index");
     auto all = index.all(tokenMap.at("the"));
     if (all != gt) {
       throw std::runtime_error("bad search results");
