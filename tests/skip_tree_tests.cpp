@@ -84,6 +84,7 @@ TEST(SkipTreeTest, RandomDelete) {
     UInt64Row v{vec[i]};
     gt.erase(gt.find(vec[i]));
     ASSERT_TRUE(tree.remove(v));
+    ASSERT_FALSE(tree.remove(v));
   }
 
   ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
