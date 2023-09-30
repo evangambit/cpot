@@ -13,6 +13,8 @@
 #include "../common/utils.h"
 #include "MathyRow.h"
 
+using namespace cpot;
+
 struct IntPair {
   uint32_t x;
   uint32_t y;

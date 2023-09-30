@@ -14,6 +14,8 @@
 #include "../src/common/utils.h"
 #include "../src/uint64/UInt64Row.h"
 
+using namespace cpot;
+
 int main() {
   std::unordered_map<std::string, uint64_t> tokenMap;
 

@@ -1,6 +1,8 @@
 #ifndef ITERATOR_H
 #define ITERATOR_H
 
+namespace cpot {
+
 template<class T>
 struct IteratorInterface {
   IteratorInterface() : currentValue(T::smallest()) {}
@@ -119,5 +121,7 @@ void print_iterator(std::shared_ptr<IteratorInterface<Row>> it) {
   }
   std::cout << std::endl;
 }
+
+}  // namespace cpot
 
 #endif  // ITERATOR_H

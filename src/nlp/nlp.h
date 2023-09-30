@@ -8,6 +8,8 @@
 
 #include <vector>
 
+using namespace cpot;
+
 struct NlpIndex {
   struct NlpRow {
     uint64_t docid : 48;

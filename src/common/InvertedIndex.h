@@ -4,6 +4,8 @@
 #include "SkipTree.h"
 #include "DiskPageManager.h"
 
+namespace cpot {
+
 // typedef uint32_t RowLoc;
 typedef uint64_t Token;
 
@@ -118,16 +120,16 @@ struct InvertedIndex {
       RareRow rareRow{token, row};
       rareTree->insert(rareRow);
     } else {
-      auto btree = this->btree(token, tokenRow->root);
-      btree->insert(row);
+      auto collection = this->collection(token, tokenRow->root);
+      collection->insert(row);
     }
 
     if (tokenRow->count > kRareThreshold && tokenRow->root == kNullPage) {
       // Migrate from rare to common.
-      assert(!btrees.contains(token));
+      assert(!collections.contains(token));
       auto newTree = std::make_shared<SkipTree<Row>>(this->pageManager, PageLoc(-1));
       tokenRow->root = newTree->rootLoc_;
-      btrees.insert(std::make_pair(token, newTree));
+      collections.insert(std::make_pair(token, newTree));
       std::vector<RareRow> A = rareTree->range(
         RareRow{token, Row::smallest()},
         RareRow{token, Row::largest()}
@@ -156,7 +158,7 @@ struct InvertedIndex {
       }
       return results;
     }
-    return this->btree(token, tokenRow->root)->all();
+    return this->collection(token, tokenRow->root)->all();
   }
 
   // Returns rows on the interval [low, high)
@@ -175,7 +177,7 @@ struct InvertedIndex {
       }
       return results;
     }
-    return this->btree(token, tokenRow->root)->range(low, high, reserve);
+    return this->collection(token, tokenRow->root)->range(low, high, reserve);
   }
 
   std::shared_ptr<IteratorInterface<Row>> iterator(uint64_t token) {
@@ -188,7 +190,7 @@ struct InvertedIndex {
       );
       return std::make_shared<RareToCommonIterator>(token, it);
     } else {
-      return SkipTree<Row>::iterator(this->btree(token, tokenRow->root));
+      return SkipTree<Row>::iterator(this->collection(token, tokenRow->root));
     }
   }
 
@@ -212,12 +214,12 @@ struct InvertedIndex {
     return result->count;
   }
 
-  std::shared_ptr<SkipTree<Row>> btree(Token token, PageLoc root) {
+  std::shared_ptr<SkipTree<Row>> collection(Token token, PageLoc root) {
     assert(root != kNullPage);
-    if (!btrees.contains(token)) {
-      btrees.insert(std::make_pair(token, std::make_shared<SkipTree<Row>>(this->pageManager, root)));
+    if (!collections.contains(token)) {
+      collections.insert(std::make_pair(token, std::make_shared<SkipTree<Row>>(this->pageManager, root)));
     }
-    return btrees.at(token);
+    return collections.at(token);
   }
 
   std::shared_ptr<PageManager<typename SkipTree<TokenRow>::Node>> headerPageManager;
@@ -227,7 +229,9 @@ struct InvertedIndex {
   std::unique_ptr<SkipTree<TokenRow>> header;
   std::shared_ptr<SkipTree<RareRow>> rareTree;
 
-  std::unordered_map<Token, std::shared_ptr<SkipTree<Row>>> btrees;
+  std::unordered_map<Token, std::shared_ptr<SkipTree<Row>>> collections;
 };
+
+}  // namespace cpot
 
 #endif  // INVERTEDINDEX_H

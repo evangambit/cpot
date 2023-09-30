@@ -14,20 +14,20 @@
 #include <unordered_set>
 #include <vector>
 
-/**
- * SkipTree
- * 
- * Similar to a BTree, but we keep a bit more information, which is technically
- * redundant, but simplifies code. We store (1) the depth of a node (0 is a
- * leaf node), (2) the "next" node in the chain (simplifies iteration), and (3)
- * all values are stored in leaves, which requires some data duplication since
- * some values are also stored in internal nodes.
- * 
- * There are two types of nodes: leaves (which have values) and internal nodes.
- * 
- * There is always a single top-level node. If the number of top-level nodes is
- * more than one, we increase the depth.
- */
+#ifndef NDEBUG
+#   define ASSERT(condition, message) \
+    do { \
+        if (! (condition)) { \
+            std::cerr << "Assertion `" #condition "` failed in " << __FILE__ \
+                      << " line " << __LINE__ << ": " << message << std::endl; \
+            std::terminate(); \
+        } \
+    } while (false)
+#else
+#   define ASSERT(condition, message) do { } while (false)
+#endif
+
+namespace cpot {
 
 typedef uint16_t RowLoc;
 
@@ -41,17 +41,17 @@ struct SkipTree {
   // static constexpr int kMinLeafSize = kLeafSize / 2 - 1;
   // static constexpr int kMinNodeSize = kNodeSize / 2 - 1;
 
-  // static constexpr int kLeafSize = 6;
-  // static constexpr int kNodeSize = 6;
-  // // TODO: what should these be?
-  // static constexpr int kMinLeafSize = 3;
-  // static constexpr int kMinNodeSize = 3;
-
-  static constexpr int kLeafSize = 32;
-  static constexpr int kNodeSize = 32;
+  static constexpr int kLeafSize = 8;
+  static constexpr int kNodeSize = 8;
   // TODO: what should these be?
-  static constexpr int kMinLeafSize = 16;
-  static constexpr int kMinNodeSize = 16;
+  static constexpr int kMinLeafSize = 4;
+  static constexpr int kMinNodeSize = 4;
+
+  // static constexpr int kLeafSize = 32;
+  // static constexpr int kNodeSize = 32;
+  // // TODO: what should these be?
+  // static constexpr int kMinLeafSize = 16;
+  // static constexpr int kMinNodeSize = 16;
 
   struct Leaf {
     Row rows[kLeafSize];
@@ -63,6 +63,7 @@ struct SkipTree {
   };
 
   union NodeValue {
+    constexpr NodeValue() {}
     Leaf leaf;
     InternalNode internal;
   };
@@ -73,6 +74,7 @@ struct SkipTree {
     PageLoc self;
     PageLoc next;
     NodeValue value;
+    Node() {}
     inline void assert_alive() const {
       assert(self != kNullPage);
     }
@@ -248,12 +250,6 @@ struct SkipTree {
 
     std::pair<Node const *, uint16_t> r = this->_lower_bound(child, query);
 
-    // It's possible that the value we're searching for is between this
-    // child and the next child.
-    if (r.first == nullptr && child->next != kNullPage) {
-      r = this->_lower_bound(pageManager_->load_page(child->next), query);
-    }
-    
     return r;
   }
 
@@ -336,7 +332,7 @@ struct SkipTree {
     assert(kMinLeafSize > 2);
     assert(kMinNodeSize > 2);
 
-    Node const *kRoot = pageManager_->load_page(rootLoc_);
+    Node const * const kRoot = pageManager_->load_page(rootLoc_);
     assert(kRoot->depth < 20);
     bool result = this->_insert(kRoot, row);
     assert(kRoot->length > 0);
@@ -437,9 +433,9 @@ struct SkipTree {
       }
     }
     if (child->is_leaf()) {
-      assert(child->length >= kMinLeafSize);
+      ASSERT(child->length >= kMinLeafSize, std::to_string(child->length));
     } else {
-      assert(child->length >= kMinNodeSize);
+      ASSERT(child->length >= kMinNodeSize, std::to_string(child->length));
     }
 
     assert(child->self == parent->value.internal.children[idx]);
@@ -515,9 +511,14 @@ struct SkipTree {
   }
 
   bool remove(Row row) {
+    return this->remove(row, false);
+  }
+
+  bool remove(Row row, bool debug) {
     Node const *kRoot = pageManager_->load_page(rootLoc_);
     kRoot->assert_alive();
-    bool result = this->_remove(kRoot, row);
+    bool result = this->_remove(kRoot, row, debug);
+
     if (kRoot->length == 1) {
       Node *root = pageManager_->load_and_modify_page(kRoot->self);
       Node *child = pageManager_->load_and_modify_page(kRoot->value.internal.children[0]);
@@ -538,7 +539,7 @@ struct SkipTree {
     return result;
   }
 
-  bool _remove(Node const *knode, Row row) {
+  bool _remove(Node const *knode, Row row, bool debug) {
     assert(!knode->is_too_small() || knode->self == rootLoc_);
     Row const *vals = knode->value.internal.rows;
     Row const *end = vals + knode->length;
@@ -564,12 +565,12 @@ struct SkipTree {
 
     Node const *kChild = pageManager_->load_page(knode->value.internal.children[idx]);
     assert(*(kChild->get_row(0)) == knode->value.internal.rows[idx]);
-    bool result = this->_remove(kChild, row);
+    bool result = this->_remove(kChild, row, debug);
 
     if (kChild->is_too_small()) {
       Node *parent = pageManager_->load_and_modify_page(knode->self);
       Node *child = pageManager_->load_and_modify_page(kChild->self);
-      this->_handle_too_small_child(parent, child, idx);
+      this->_handle_too_small_child(parent, child, idx, debug);
     } else if (kChild->get_row(0) != knode->get_row(idx)) {
       Node *parent = pageManager_->load_and_modify_page(knode->self);
       parent->set_row(idx, kChild->get_row(0));
@@ -578,9 +579,10 @@ struct SkipTree {
     return result;
   }
 
-  void _handle_too_small_child(Node *parent, Node *child, size_t idx) {
+  void _handle_too_small_child(Node *parent, Node *child, size_t idx, bool debug) {
     assert(!parent->is_leaf());
     assert(child->is_too_small());
+    assert(parent->value.internal.children[idx] == child->self);
 
     Node *left = nullptr;
     Node *right = nullptr;
@@ -651,6 +653,7 @@ struct SkipTree {
 
   void _rebalance(Node *parent, Node *left, Node *right, size_t leftIdx) {
     assert(left->is_leaf() == right->is_leaf());
+    assert(left->next == right->self);
     const bool isLeaf = left->is_leaf();
     assert(parent->value.internal.children[leftIdx] == left->self);
     if (isLeaf) {
@@ -686,8 +689,9 @@ struct SkipTree {
           left->value.internal.children[left->length] = right->value.internal.children[i];
           right->value.internal.rows[i] = right->value.internal.rows[i + delta];
           right->value.internal.children[i] = right->value.internal.children[i + delta];
+          left->length += 1;
         }
-        left->length += delta;
+
         for (size_t i = delta; i < right->length - delta; ++i) {
           right->value.internal.rows[i] = right->value.internal.rows[i + delta];
           right->value.internal.children[i] = right->value.internal.children[i + delta];
@@ -809,6 +813,6 @@ struct SkipTree {
   std::shared_ptr<PageManager<Node>> pageManager_;
 };
 
-
+}  // namespace cpot
 
 #endif  // BTREE_H

@@ -1,7 +1,12 @@
+#ifndef DISK_ARRAY_H
+#define DISK_ARRAY_H
+
 #include <cstdint>
 #include <string>
 
 #include "PageManager.h"
+
+namespace cpot {
 
 // This class is provided for illustration purposes.
 template<class T>
@@ -35,3 +40,7 @@ struct DiskArray {
 
   std::shared_ptr<PageManager<T>> pageManager;
 };
+
+}  // namespace cpot
+
+#endif  // DISK_ARRAY_H

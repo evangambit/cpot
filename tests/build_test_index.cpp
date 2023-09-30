@@ -12,6 +12,8 @@
 #include "src/common/utils.h"
 #include "src/uint64/UInt64Row.h"
 
+using namespace cpot;
+
 template<class T>
 void assert_eq(const T& a, const T& b) {
   if (!(a == b)) {

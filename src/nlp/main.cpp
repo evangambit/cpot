@@ -2,6 +2,8 @@
 
 #include "nlp.h"
 
+using namespace cpot;
+
 int main() {
   auto t0 = std::chrono::high_resolution_clock::now();
   std::ifstream testFile("inverted-index/bible.txt");

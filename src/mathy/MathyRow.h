@@ -5,6 +5,8 @@
 #include <iostream>
 #include <stdexcept>
 
+using namespace cpot;
+
 struct MathyRow {
   uint32_t docid;
   uint32_t value;

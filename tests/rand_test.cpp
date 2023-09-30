@@ -16,6 +16,8 @@
 #include "../src/common/SkipTree.h"
 #include "../src/uint64/UInt64Row.h"
 
+using namespace cpot;
+
 // Copied from https://en.cppreference.com/w/cpp/algorithm/random_shuffle
 template<class RandomIt>
 void shuffle(RandomIt first, RandomIt last) {

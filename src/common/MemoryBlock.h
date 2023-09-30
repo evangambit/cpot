@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <fstream>
 
+namespace cpot {
+
 template<class Page>
 struct MemoryBlock {
   MemoryBlock() = delete;
@@ -38,5 +40,7 @@ struct MemoryBlock {
   bool isModified;
   const uint64_t start, length;
 };
+
+}  // namespace cpot {
 
 #endif  // MEMORY_BLOCK_H

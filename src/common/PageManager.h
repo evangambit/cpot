@@ -10,6 +10,8 @@
 
 #include "MemoryBlock.h"
 
+namespace cpot {
+
 typedef uint32_t PageLoc;
 
 template<class Page>
@@ -24,5 +26,7 @@ struct PageManager {
   virtual bool empty() const = 0;
   virtual ~PageManager() = default;
 };
+
+}  // namespace cpot
 
 #endif  // PAGE_MANAGER_H

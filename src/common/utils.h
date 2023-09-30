@@ -4,6 +4,8 @@
 #include <deque>
 #include <string>
 
+namespace cpot {
+
 std::deque<std::string> split(const std::string& text, char delimiter) {
   std::deque<std::string> r;
   size_t pos = 0;
@@ -60,5 +62,7 @@ std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& A) {
   }
   return s << "}";
 }
+
+}  // namespace cpot
 
 #endif  // UTILS_H

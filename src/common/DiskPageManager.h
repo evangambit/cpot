@@ -3,6 +3,8 @@
 
 #include "PageManager.h"
 
+namespace cpot {
+
 template<class Page>
 struct DiskPageManager : public PageManager<Page> {
   DiskPageManager() = delete;
@@ -93,5 +95,7 @@ struct DiskPageManager : public PageManager<Page> {
   uint64_t _currentMemoryUsed;  // in bytes
   std::unordered_map<PageLoc, std::shared_ptr<MemoryBlock<Page>>> pages;
 };
+
+}  // namespace cpot
 
 #endif  // DISK_PAGE_MANAGER_H

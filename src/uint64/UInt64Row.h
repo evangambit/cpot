@@ -6,6 +6,8 @@
 
 struct UInt64Row {
   uint64_t val;
+  UInt64Row() {}
+  UInt64Row(uint64_t val) : val(val) {}
   static UInt64Row smallest() {
     return UInt64Row{0};
   }
