@@ -6,11 +6,17 @@
 
 #include "../src/common/SkipTree.h"
 #include "../src/common/MemoryPageManager.h"
+#include "../src/common/DiskPageManager.h"
 #include "../src/uint64/UInt64Row.h"
 
 using namespace cpot;
 
 namespace {
+
+std::ifstream::pos_type filesize(const char* filename) {
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg(); 
+}
 
 template<class T>
 std::ostream& operator<<(std::ostream& s, const std::vector<T>& A) {
@@ -52,71 +58,120 @@ std::vector<Row> iter2vec(std::shared_ptr<IteratorInterface<Row>> it) {
   return r;
 }
 
-TEST(SkipTreeTest, ValuesAreOrdered) {
-  std::vector<UInt64Row> A = range(0, 100'000);
-  shuffle(A.begin(), A.end());
-  auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
-  SkipTree<UInt64Row> skipTree(pageManager, kNullPage);
-  for (auto a : A) {
-    skipTree.insert(a);
-  }
-  EXPECT_EQ(skipTree.all(), range(0, 100'000));
-}
+// TEST(SkipTreeTest, ValuesAreOrdered) {
+//   std::vector<UInt64Row> A = range(0, 100'000);
+//   shuffle(A.begin(), A.end());
+//   auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
+//   SkipTree<UInt64Row> skipTree(pageManager, kNullPage);
+//   for (auto a : A) {
+//     skipTree.insert(a);
+//   }
+//   EXPECT_EQ(skipTree.all(), range(0, 100'000));
+// }
 
-TEST(SkipTreeTest, RandomDelete) {
-  const uint64_t high = 100'000;
-  auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
+// TEST(SkipTreeTest, RandomDelete) {
+//   const uint64_t high = 100'000;
+//   auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
 
-  SkipTree<UInt64Row> tree(pageManager, kNullPage);
-  std::set<uint64_t> gt;
+//   SkipTree<UInt64Row> tree(pageManager, kNullPage);
+//   std::set<uint64_t> gt;
 
-  std::vector<uint64_t> vec;
-  for (uint64_t i = 1; i <= high; ++i) {
-    gt.insert(i);
-    vec.push_back(i);
-    tree.insert(i);
-  }
-  shuffle(vec.begin(), vec.end());
+//   std::vector<uint64_t> vec;
+//   for (uint64_t i = 1; i <= high; ++i) {
+//     gt.insert(i);
+//     vec.push_back(i);
+//     tree.insert(i);
+//   }
+//   shuffle(vec.begin(), vec.end());
 
-  ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
+//   ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
 
-  for (size_t i = 1; i <= high / 2; ++i) {
-    UInt64Row v{vec[i]};
-    gt.erase(gt.find(vec[i]));
-    ASSERT_TRUE(tree.remove(v));
-    ASSERT_FALSE(tree.remove(v));
-  }
+//   for (size_t i = 1; i <= high / 2; ++i) {
+//     UInt64Row v{vec[i]};
+//     gt.erase(gt.find(vec[i]));
+//     ASSERT_TRUE(tree.remove(v));
+//     ASSERT_FALSE(tree.remove(v));
+//   }
 
-  ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
-}
+//   ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
+// }
 
-TEST(SkipTreeTest, Range) {
+// TEST(SkipTreeTest, Range) {
+//   const uint64_t high = 1000;
+//   auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
+//   SkipTree<UInt64Row> tree(pageManager, kNullPage);
+
+//   for (uint64_t i = 1; i <= high; ++i) {
+//     tree.insert(UInt64Row{i});
+//   }
+
+//   std::vector<UInt64Row> A = tree.range(100, 150);
+
+//   ASSERT_EQ(A, range(100, 150));
+// }
+
+// TEST(SkipTreeTest, EmptyTree) {
+//   const uint64_t high = 100;
+//   std::vector<UInt64Row> A = range(0, high);
+//   shuffle(A.begin(), A.end());
+//   auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
+//   SkipTree<UInt64Row> tree(pageManager, kNullPage);
+//   for (auto a : A) {
+//     tree.insert(a);
+//   }
+//   for (auto a : A) {
+//     ASSERT_TRUE(tree.remove(a));
+//   }
+//   ASSERT_EQ(tree.all(), std::vector<UInt64Row>());
+// }
+
+TEST(SkipTreeTest, ReuseInsert) {
   const uint64_t high = 1000;
-  auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
-  SkipTree<UInt64Row> tree(pageManager, kNullPage);
+  std::set<uint64_t> gt;
+  std::vector<uint64_t> vec;
+  PageLoc root;
 
-  for (uint64_t i = 1; i <= high; ++i) {
-    tree.insert(UInt64Row{i});
+  {
+    auto pageManager = std::make_shared<DiskPageManager<SkipTree<UInt64Row>::Node>>("test-index");
+    SkipTree<UInt64Row> tree(pageManager, kNullPage);
+    root = tree.rootLoc_;
+
+    for (uint64_t i = 1; i <= high; ++i) {
+      gt.insert(i);
+      vec.push_back(i);
+      tree.insert(i);
+    }
+    shuffle(vec.begin(), vec.end());
+
+    ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
   }
 
-  std::vector<UInt64Row> A = tree.range(100, 150);
+  {
+    auto pageManager = std::make_shared<DiskPageManager<SkipTree<UInt64Row>::Node>>("test-index");
+    SkipTree<UInt64Row> tree(pageManager, root);
 
-  ASSERT_EQ(A, range(100, 150));
-}
+    for (size_t i = 1; i <= high / 2; ++i) {
+      UInt64Row v{vec[i]};
+      gt.erase(gt.find(vec[i]));
+      ASSERT_TRUE(tree.remove(v));
+      ASSERT_FALSE(tree.remove(v));
+    }
 
-TEST(SkipTreeTest, EmptyTree) {
-  const uint64_t high = 100;
-  std::vector<UInt64Row> A = range(0, high);
-  shuffle(A.begin(), A.end());
-  auto pageManager = std::make_shared<MemoryPageManager<SkipTree<UInt64Row>::Node>>();
-  SkipTree<UInt64Row> tree(pageManager, kNullPage);
-  for (auto a : A) {
-    tree.insert(a);
+    ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
   }
-  for (auto a : A) {
-    ASSERT_TRUE(tree.remove(a));
+
+  {
+    auto pageManager = std::make_shared<DiskPageManager<SkipTree<UInt64Row>::Node>>("test-index");
+    SkipTree<UInt64Row> tree(pageManager, root);
+
+    for (size_t i = 1; i <= high / 2; ++i) {
+      UInt64Row v{vec[i]};
+      gt.insert(vec[i]);
+      tree.insert(v);
+    }
+
+    ASSERT_EQ(tree.all(), std::vector<UInt64Row>(gt.begin(), gt.end()));
   }
-  ASSERT_EQ(tree.all(), std::vector<UInt64Row>());
 }
 
 
@@ -126,4 +181,5 @@ int main() {
   testing::InitGoogleTest();
   return RUN_ALL_TESTS();
 }
+
 

@@ -9,44 +9,45 @@ namespace cpot {
 
 template<class Page>
 struct MemoryPageManager : public PageManager<Page> {
-  MemoryPageManager() {}
+  MemoryPageManager() : n_(0) {}
   Page const *load_page(PageLoc loc) override {
-    if (pages.count(loc) == 0) {
+    if (pages_.count(loc) == 0) {
       throw std::runtime_error("cannot load_page");
     }
-    return pages.at(loc);
+    return pages_.at(loc);
   }
   Page *load_and_modify_page(PageLoc loc) override {
-    if (pages.count(loc) == 0) {
+    if (pages_.count(loc) == 0) {
       throw std::runtime_error("cannot load_and_modify_page");
     }
-    return pages.at(loc);
+    return pages_.at(loc);
   }
   void delete_page(PageLoc loc) override {
-    if (pages.count(loc) == 0) {
+    if (pages_.count(loc) == 0) {
       throw std::runtime_error("cannot delete_page");
     }
-    delete pages.at(loc);
-    pages.erase(loc);
+    delete pages_.at(loc);
+    pages_.erase(loc);
   }
   Page *new_page(PageLoc *location = nullptr) override {
-    *location = pages.size();
+    *location = n_++;
     Page *page = new Page();
-    pages.insert(std::make_pair(*location, page));
+    pages_.insert(std::make_pair(*location, page));
     return page;
   }
   void commit() override {}
   void flush() override {}
   uint64_t currentMemoryUsed() const override {
-    return pages.size() * sizeof(Page);
+    return pages_.size() * sizeof(Page);
   }
   bool empty() const override {
-    return pages.size() == 0;
+    return pages_.size() == 0;
   }
   ~MemoryPageManager() override {
 
   }
-  std::unordered_map<PageLoc, Page *> pages;
+  uint64_t n_;
+  std::unordered_map<PageLoc, Page *> pages_;
 };
 
 }  // namespace cpot
