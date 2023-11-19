@@ -223,6 +223,6 @@ struct InvertedIndexCLI {
 };
 
 int main() {
-  InvertedIndexCLI cli("mathy-test-index");
+  InvertedIndexCLI cli("test-index/index");
   cli.run();
 }

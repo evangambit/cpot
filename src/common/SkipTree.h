@@ -124,7 +124,7 @@ struct SkipTree {
   };
 
   SkipTree(std::shared_ptr<PageManager<Node>> pageManager, PageLoc rootLoc)
-  : pageManager_(pageManager), rootLoc_(rootLoc) {
+  : rootLoc_(rootLoc), pageManager_(pageManager) {
     if (rootLoc_ == kNullPage) {
       rootLoc_ = this->_create_node(kNullPage, 0)->self;
     }
@@ -752,12 +752,12 @@ struct SkipTree {
 
   struct Iterator : public IteratorInterface<Row> {
     Iterator(std::shared_ptr<SkipTree> tree, Row low, Row high)
-    : tree_(tree), low(low), high(high) {
+    : low(low), high(high), tree_(tree) {
       this->skip_to(low);
     }
     // Returns the smallest value that is greater than or equal to val
     Row skip_to(Row val) override {
-      loc_ = tree_->_lower_bound(low);
+      loc_ = tree_->_lower_bound(val);
       if (loc_.first != nullptr && loc_.first->value.leaf.rows[loc_.second] < high) {
         this->currentValue = loc_.first->value.leaf.rows[loc_.second];
       } else {

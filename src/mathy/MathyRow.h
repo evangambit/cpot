@@ -32,16 +32,22 @@ struct MathyRow {
     return MathyRow::make(docid, value);
   }
   std::string to_string() const {
-    return std::to_string(docid) + ":" + std::to_string(value);
+    return "(" + std::to_string(docid) + ":" + std::to_string(value) + ")";
   }
   bool operator<(MathyRow that) const {
-    return this->docid < that.docid;
+    if (this->docid != that.docid) {
+      return this->docid < that.docid;
+    }
+    return this->value < that.value;
   }
   bool operator==(MathyRow that) const {
-    return docid == that.docid;
+    return docid == that.docid && this->value == that.value;
   }
   bool operator<=(MathyRow that) const {
-    return this->docid <= that.docid;
+    if (this->docid != that.docid) {
+      return this->docid <= that.docid;
+    }
+    return this->value <= that.value;
   }
   MathyRow next() const {
     return MathyRow{docid + 1};
@@ -52,7 +58,7 @@ struct MathyRow {
 };
 
 std::ostream& operator<<(std::ostream& s, const MathyRow& row) {
-  return s << row.docid << ":" << row.value;
+  return s << "(" << row.docid << ":" << row.value << ")";
 }
 
 #endif  // MathyRow

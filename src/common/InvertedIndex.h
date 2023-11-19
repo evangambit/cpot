@@ -10,6 +10,19 @@ namespace cpot {
 typedef uint64_t Token;
 
 template<class Row>
+struct ConstIterator : public IteratorInterface<Row> {
+  ConstIterator(Row value) {
+    this->currentValue = value;
+  }
+  Row skip_to(Row row) override {
+    return this->currentValue;
+  }
+  Row next() override {
+    return this->currentValue;
+  }
+};
+
+template<class Row>
 struct InvertedIndex {
   // Tokens that are more common than this are stored in their own tree.
   static constexpr uint64_t kRareThreshold = 50;
@@ -67,7 +80,9 @@ struct InvertedIndex {
   };
   struct RareToCommonIterator : public IteratorInterface<Row> {
     RareToCommonIterator(uint64_t token, std::shared_ptr<IteratorInterface<RareRow>> it)
-    : token_(token), it_(it) {}
+    : token_(token), it_(it) {
+      this->currentValue = it->currentValue.row;
+    }
     Row skip_to(Row row) override {
       it_->skip_to(RareRow{token_, row});
       this->currentValue = it_->currentValue.row;
@@ -82,8 +97,8 @@ struct InvertedIndex {
     std::shared_ptr<IteratorInterface<RareRow>> it_;
   };
   InvertedIndex(std::string filename)
-  : pageManager(std::make_shared<DiskPageManager<typename SkipTree<Row>::Node>>(filename)),
-    headerPageManager(std::make_shared<DiskPageManager<typename SkipTree<TokenRow>::Node>>(filename + ".header")),
+  : headerPageManager(std::make_shared<DiskPageManager<typename SkipTree<TokenRow>::Node>>(filename + ".header")),
+    pageManager(std::make_shared<DiskPageManager<typename SkipTree<Row>::Node>>(filename)),
     rarePageManager(std::make_shared<DiskPageManager<typename SkipTree<RareRow>::Node>>(filename + ".rare")) {
     if (headerPageManager->empty()) {
       this->header = std::make_unique<SkipTree<TokenRow>>(headerPageManager, -1);
@@ -113,7 +128,6 @@ struct InvertedIndex {
       rareTree = std::make_shared<SkipTree<RareRow>>(rarePageManager, 0);
     }
   }
-
 
   uint64_t currentMemoryUsed() const {
     return headerPageManager->currentMemoryUsed() + pageManager->currentMemoryUsed();
@@ -209,6 +223,23 @@ struct InvertedIndex {
       return std::make_shared<RareToCommonIterator>(token, it);
     } else {
       return SkipTree<Row>::iterator(this->collection(token, tokenRow->root));
+    }
+  }
+
+  std::shared_ptr<IteratorInterface<Row>> iterator(uint64_t token, Row lowerBound) {
+    TokenRow const *tokenRow = this->header->find(TokenRow{token, 0, 0});
+    if (tokenRow == nullptr) {
+      return std::make_shared<ConstIterator<Row>>(Row::largest());
+    }
+    if (tokenRow->root == kNullPage) {
+      std::shared_ptr<IteratorInterface<RareRow>> it = SkipTree<RareRow>::iterator(
+        rareTree,
+        RareRow{token, lowerBound},
+        RareRow{token, Row::largest()}
+      );
+      return std::make_shared<RareToCommonIterator>(token, it);
+    } else {
+      return SkipTree<Row>::iterator(this->collection(token, tokenRow->root), lowerBound, Row::largest());
     }
   }
 

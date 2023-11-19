@@ -31,7 +31,6 @@ struct DiskPageManager : public PageManager<Page> {
     long fsize = ftell(headerFile);
     fseek(headerFile, 0, SEEK_SET);
     for (long i = 0; i < fsize; ++i) {
-      uint64_t j = i * sizeof(PageLoc);
       uint64_t index;
       fread(&index, 1, sizeof(PageLoc), headerFile);
       availablePages_.push_back(index);
@@ -115,6 +114,7 @@ struct DiskPageManager : public PageManager<Page> {
     FILE *headerFile = fopen(headerFilename.c_str(), "w");
     fseek(headerFile, 0, SEEK_SET);
     fwrite(&availablePages_[0], availablePages_.size(), sizeof(PageLoc), headerFile);
+    fclose(headerFile);
   }
   void flush() override {
     this->commit();
