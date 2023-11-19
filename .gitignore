@@ -1,0 +1,6 @@
+build/
+cpot.egg-info/
+dist/
+hello.egg-info/
+test-index/
+venv/
