@@ -3,6 +3,8 @@
 
 #include "PageManager.h"
 
+typedef std::unordered_map<PageLoc, std::shared_ptr<MemoryBlock<Page>>> Pages;
+
 namespace cpot {
 
 template<class Page>
@@ -87,24 +89,24 @@ struct DiskPageManager : public PageManager<Page> {
     if (availablePages_.size() > 0) {
       const PageLoc loc = availablePages_.back();
       availablePages_.pop_back();
-      std::shared_ptr<MemoryBlock<Page>> block = std::make_shared<MemoryBlock<Page>>(loc, 1);
-      pages_.insert(std::make_pair(loc, block));
+      std::shared_ptr<MemoryBlock<Page>> page = std::make_shared<MemoryBlock<Page>>(loc, 1);
+      pages_.insert(std::make_pair(loc, page));
       _currentMemoryUsed += sizeof(Page);
-      block->page_was_modified(loc);
+      page->page_was_modified(loc);
       if (location != nullptr) {
         *location = loc;
       }
-      return &(block->data[loc - block->start]);
+      return &(page->data[loc - page->start]);
     }
     const PageLoc loc = numPages_++;
-    std::shared_ptr<MemoryBlock<Page>> block = std::make_shared<MemoryBlock<Page>>(loc, 1);
-    pages_.insert(std::make_pair(loc, block));
+    std::shared_ptr<MemoryBlock<Page>> page = std::make_shared<MemoryBlock<Page>>(loc, 1);
+    pages_.insert(std::make_pair(loc, page));
     _currentMemoryUsed += sizeof(Page);
-    block->page_was_modified(loc);
+    page->page_was_modified(loc);
     if (location != nullptr) {
       *location = loc;
     }
-    return &(block->data[loc - block->start]);
+    return &(page->data[loc - page->start]);
   }
   void commit() override {
     for (auto it = pages_.begin(); it != pages_.end(); ++it) {
@@ -136,7 +138,7 @@ struct DiskPageManager : public PageManager<Page> {
   FILE *file_;
   PageLoc numPages_;
   uint64_t _currentMemoryUsed;  // in bytes
-  std::unordered_map<PageLoc, std::shared_ptr<MemoryBlock<Page>>> pages_;
+  Pages pages_;
 };
 
 }  // namespace cpot
