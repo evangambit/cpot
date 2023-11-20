@@ -22,18 +22,18 @@ struct MathyRow {
     rtn.value = value;
     return rtn;
   }
-  static MathyRow from_string(std::string s) {
-    std::deque<std::string> parts = split(s, ':');
-    if (parts.size() != 2) {
-      throw std::invalid_argument("Invalid row: must be 123:456");
-    }
-    uint32_t docid = static_cast<uint32_t>(std::stoul(parts[0]));
-    uint32_t value = static_cast<uint32_t>(std::stoul(parts[1]));
-    return MathyRow::make(docid, value);
-  }
-  std::string to_string() const {
-    return "(" + std::to_string(docid) + ":" + std::to_string(value) + ")";
-  }
+  // static MathyRow from_string(std::string s) {
+  //   std::deque<std::string> parts = split(s, ':');
+  //   if (parts.size() != 2) {
+  //     throw std::invalid_argument("Invalid row: must be 123:456");
+  //   }
+  //   uint32_t docid = static_cast<uint32_t>(std::stoul(parts[0]));
+  //   uint32_t value = static_cast<uint32_t>(std::stoul(parts[1]));
+  //   return MathyRow::make(docid, value);
+  // }
+  // std::string to_string() const {
+  //   return "(" + std::to_string(docid) + ":" + std::to_string(value) + ")";
+  // }
   bool operator<(MathyRow that) const {
     if (this->docid != that.docid) {
       return this->docid < that.docid;

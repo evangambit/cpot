@@ -35,30 +35,22 @@ constexpr PageLoc kNullPage = PageLoc(-1);
 
 template<class Row>
 struct SkipTree {
-  // static constexpr int kLeafSize = 12;
-  // static constexpr int kNodeSize = sizeof(Row) * kLeafSize / (sizeof(Row) + sizeof(PageLoc));
-  // // TODO: what should these be?
-  // static constexpr int kMinLeafSize = kLeafSize / 2 - 1;
-  // static constexpr int kMinNodeSize = kNodeSize / 2 - 1;
-
-  static constexpr int kLeafSize = 8;
-  static constexpr int kNodeSize = 8;
   // TODO: what should these be?
-  static constexpr int kMinLeafSize = 4;
-  static constexpr int kMinNodeSize = 4;
-
-  // static constexpr int kLeafSize = 32;
-  // static constexpr int kNodeSize = 32;
-  // // TODO: what should these be?
-  // static constexpr int kMinLeafSize = 16;
-  // static constexpr int kMinNodeSize = 16;
+  // static constexpr int kLeafSize = 8;
+  // static constexpr int kNodeSize = 8;
+  // static constexpr int kMinLeafSize = 4;
+  // static constexpr int kMinNodeSize = 4;
+  static constexpr int kLeafSize = 32;
+  static constexpr int kNodeSize = 32;
+  static constexpr int kMinLeafSize = 16;
+  static constexpr int kMinNodeSize = 16;
 
   struct Leaf {
     Row rows[kLeafSize];
   };
 
   struct InternalNode {
-    Row rows[kNodeSize]; // the smallest value of each child
+    Row rows[kNodeSize];  // the smallest value of each child
     PageLoc children[kNodeSize];
   };
 
