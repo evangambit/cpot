@@ -4,3 +4,4 @@ dist/
 hello.egg-info/
 test-index/
 venv/
+cpot/__pycache__/
