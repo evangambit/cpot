@@ -3,8 +3,6 @@
 
 #include "PageManager.h"
 
-typedef std::unordered_map<PageLoc, std::shared_ptr<MemoryBlock<Page>>> Pages;
-
 namespace cpot {
 
 template<class Page>
@@ -138,7 +136,7 @@ struct DiskPageManager : public PageManager<Page> {
   FILE *file_;
   PageLoc numPages_;
   uint64_t _currentMemoryUsed;  // in bytes
-  Pages pages_;
+  std::unordered_map<PageLoc, std::shared_ptr<MemoryBlock<Page>>> pages_;
 };
 
 }  // namespace cpot
