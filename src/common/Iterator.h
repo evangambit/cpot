@@ -36,8 +36,8 @@ struct VectorIterator : public IteratorInterface<T> {
       this->currentValue = data[0];
     }
   }
-  T skip_to(T val) override {
-    auto it = std::lower_bound(this->data.begin(), this->data.end(), val);
+  T skip_to(T row) override {
+    auto it = std::lower_bound(this->data.begin(), this->data.end(), row);
     if (it == data.end()) {
       return this->currentValue = T::largest();
     }
@@ -60,7 +60,7 @@ template<class Row>
 struct IntersectionIterator : public IteratorInterface<Row> {
   IntersectionIterator(std::vector<std::shared_ptr<IteratorInterface<Row>>>& iters) : iters(iters) {
     if (iters.size() == 0) {
-      throw std::runtime_error("UnionIterator requires at least one iterator");
+      throw std::runtime_error("IntersectionIterator requires at least one iterator");
     }
     this->skip_to(Row::smallest());
   }
@@ -90,7 +90,7 @@ struct IntersectionIterator : public IteratorInterface<Row> {
     }
   }
   Row next() override {
-    // TODO: make this more efficient?
+    // TODO: make this more efficient.
     this->skip_to(this->currentValue.next());
     return this->currentValue;
   }
