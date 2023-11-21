@@ -47,14 +47,14 @@ struct DiskPageManager : public PageManager<Page> {
     }
     #endif
     if (!pages_.contains(loc)) {
-      std::shared_ptr<MemoryBlock<Page>> block = std::make_shared<MemoryBlock<Page>>(loc, 1);
+      std::shared_ptr<MemoryBlock<Page>> block = std::make_shared<MemoryBlock<Page>>(loc);
       fseek(file_, loc * sizeof(Page), SEEK_SET);
       fread(block->data, sizeof(Page), 1, file_);
       pages_.insert(std::make_pair(loc, block));
       _currentMemoryUsed += sizeof(Page);
     }
     std::shared_ptr<MemoryBlock<Page>> block = pages_.at(loc);
-    return &(block->data[loc - block->start]);
+    return &(block->data[loc - block->location]);
   }
   Page *load_and_modify_page(PageLoc loc) override {
     #ifndef NDEBUG
@@ -64,7 +64,7 @@ struct DiskPageManager : public PageManager<Page> {
     }
     #endif
     Page *page = this->_load_page(loc);
-    pages_.at(loc)->page_was_modified(loc);
+    pages_.at(loc)->page_was_modified();
     return page;
   }
   void delete_page(PageLoc loc) override {
@@ -83,24 +83,24 @@ struct DiskPageManager : public PageManager<Page> {
     if (availablePages_.size() > 0) {
       const PageLoc loc = availablePages_.back();
       availablePages_.pop_back();
-      std::shared_ptr<MemoryBlock<Page>> page = std::make_shared<MemoryBlock<Page>>(loc, 1);
+      std::shared_ptr<MemoryBlock<Page>> page = std::make_shared<MemoryBlock<Page>>(loc);
       pages_.insert(std::make_pair(loc, page));
       _currentMemoryUsed += sizeof(Page);
-      page->page_was_modified(loc);
+      page->page_was_modified();
       if (location != nullptr) {
         *location = loc;
       }
-      return &(page->data[loc - page->start]);
+      return &(page->data[loc - page->location]);
     }
     const PageLoc loc = numPages_++;
-    std::shared_ptr<MemoryBlock<Page>> page = std::make_shared<MemoryBlock<Page>>(loc, 1);
+    std::shared_ptr<MemoryBlock<Page>> page = std::make_shared<MemoryBlock<Page>>(loc);
     pages_.insert(std::make_pair(loc, page));
     _currentMemoryUsed += sizeof(Page);
-    page->page_was_modified(loc);
+    page->page_was_modified();
     if (location != nullptr) {
       *location = loc;
     }
-    return &(page->data[loc - page->start]);
+    return &(page->data[loc - page->location]);
   }
   void commit() override {
     for (auto it = pages_.begin(); it != pages_.end(); ++it) {

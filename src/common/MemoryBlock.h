@@ -9,9 +9,8 @@ namespace cpot {
 template<class Page>
 struct MemoryBlock {
   MemoryBlock() = delete;
-  MemoryBlock(uint64_t start, uint64_t length)
-  : start(start), length(length) {
-    data = new Page[length];
+  MemoryBlock(uint64_t location) : location(location) {
+    data = new Page();
     isModified = false;
   }
   MemoryBlock(const MemoryBlock&) = delete;
@@ -20,9 +19,7 @@ struct MemoryBlock {
     delete[] data;
   }
 
-  void page_was_modified(uint64_t loc) {
-    assert(loc >= start);
-    assert(loc < start + length);
+  void page_was_modified() {
     isModified = true;
   }
 
@@ -31,14 +28,14 @@ struct MemoryBlock {
       return;
     }
     // TODO: make more efficient by making isModified an array.
-    fseek(file, start * sizeof(Page), SEEK_SET);
-    fwrite(this->data, sizeof(Page), length, file);
+    fseek(file, location * sizeof(Page), SEEK_SET);
+    fwrite(this->data, sizeof(Page), 1, file);
     isModified = false;
   }
 
   Page *data;
   bool isModified;
-  const uint64_t start, length;
+  const uint64_t location;
 };
 
 }  // namespace cpot {

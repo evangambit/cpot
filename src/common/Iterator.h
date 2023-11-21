@@ -55,7 +55,7 @@ struct IntersectionIterator : public IteratorInterface<Row> {
       x = y;
     }
   }
-  Row next() {
+  Row next() override {
     // TODO: make this more efficient?
     this->skip_to(this->currentValue.next());
     return this->currentValue;
