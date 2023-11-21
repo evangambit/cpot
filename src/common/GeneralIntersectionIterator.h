@@ -41,11 +41,11 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
     if (numNonNegatedIterators_ == 0) {
       throw std::runtime_error("GeneralIntersectionIterator requires at least one non-negated iterator");
     }
-    this->skip_to(this->_max().first);
+    this->skip_to(this->_max_non_negated().first);
   }
   // Returns the value of the largest (non-negated) iterator, as well as the
   // number of non-negated iterators with that value.
-  std::pair<Row, size_t> _max() {
+  std::pair<Row, size_t> _max_non_negated() {
     Row r = Row::smallest();
     size_t numWithMax = 0;
     for (auto iter : iters_) {
@@ -64,30 +64,33 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
     for (auto iter : iters_) {
       iter->skip_to(row);
     }
-    std::pair<Row, size_t> x = this->_max();
+    std::pair<Row, size_t> x = this->_max_non_negated();
 
     while (true) {
       if (x.first == Row::largest()) {
         return this->currentValue = x.first;
       }
       if (x.second == numNonNegatedIterators_) {
-        // Verify no negated iterators equal x.first
         bool isMatch = true;
         for (auto iter : iters_) {
-          if (iter->isNegated && iter->currentValue == x.first) {
+          if (iter->isNegated && iter->skip_to(x.first) == x.first) {
             isMatch = false;
             break;
           }
         }
         if (isMatch) {
           return this->currentValue = x.first;
+        } else {
+          for (auto iter : iters_) {
+            iter->next();
+          }
+        }
+      } else {
+        for (auto iter : iters_) {
+          iter->skip_to(x.first);
         }
       }
-      for (auto iter : iters_) {
-        iter->skip_to(x.first);
-      }
-      x = this->_max();
-      exit(1);
+      x = this->_max_non_negated();
     }
   }
   Row next() override {

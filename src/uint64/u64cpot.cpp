@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "../common/InvertedIndex.h"
-// #include "../common/utils.h"
+#include "../common/GeneralIntersectionIterator.h"
 #include "UInt64Row.h"
 
 using namespace cpot;
@@ -118,6 +118,7 @@ static PyObject *fetch(PyObject *self, PyObject *args) {
   uint64_t token;
   uint64_t docid, limit;
   if(!PyArg_ParseTuple(args, "OKKK", &index, &token, &docid, &limit)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
     return NULL;
   }
 
@@ -138,8 +139,9 @@ static PyObject *flush(PyObject *self, PyObject *args) {
 static PyObject *intersect(PyObject *self, PyObject *args) {
   PyObject* indexObj = NULL;
   PyObject *tokenList;
-  uint64_t docid, value, limit;
-  if(!PyArg_ParseTuple(args, "OOKKK", &indexObj, &tokenList, &docid, &value, &limit)) {
+  uint64_t lower_bound, limit;
+  if(!PyArg_ParseTuple(args, "OOKK", &indexObj, &tokenList, &lower_bound, &limit)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
     return NULL;
   }
 
@@ -160,11 +162,67 @@ static PyObject *intersect(PyObject *self, PyObject *args) {
   for (uint64_t token : tokens) {
     iters.push_back(index->iterator(
       token,
-      UInt64Row{docid}
+      UInt64Row{lower_bound}
     ));
   }
 
   IntersectionIterator<UInt64Row> it(iters);
+
+  return vector2obj(ffetch(&it, limit));
+}
+
+static PyObject *generalized_intersect(PyObject *self, PyObject *args) {
+  PyObject* indexObj = NULL;
+  PyObject *tokenList;
+  uint64_t lower_bound, limit;
+  if(!PyArg_ParseTuple(args, "OOKK", &indexObj, &tokenList, &lower_bound, &limit)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+
+  std::vector<std::pair<uint64_t, bool>> tokens;
+  const size_t n = PyList_GET_SIZE(tokenList);
+  for (size_t i = 0; i < n; ++i) {
+    PyObject *tuple = PyList_GET_ITEM(tokenList, i);
+    if (!PyTuple_CheckExact(tuple)) {
+      PyErr_SetString(PyExc_TypeError, "Token is not a tuple");
+      return NULL;
+    }
+    if (PyTuple_Size(tuple) != 2) {
+      PyErr_SetString(PyExc_TypeError, "Token is not the correct length");
+      return NULL;
+    }
+    PyObject *tokenObj = PyTuple_GetItem(tuple, 0);
+    PyObject *negatedObj = PyTuple_GetItem(tuple, 1);
+
+    if (!PyLong_CheckExact(tokenObj)) {
+      PyErr_SetString(PyExc_TypeError, "Token[0] is not an int");
+      return NULL;
+    }
+    uint64_t token = PyLong_AsUnsignedLongLong(tokenObj);
+
+    if (!PyBool_Check(negatedObj)) {
+      PyErr_SetString(PyExc_TypeError, "Token[1] is not a boolean");
+      return NULL;
+    }
+    bool isNegated = PyObject_IsTrue(negatedObj);
+
+    tokens.push_back(std::make_pair(token, isNegated));
+  }
+
+  Index *index = (Index*)PyCapsule_GetPointer(indexObj, kIndexName);
+
+  std::vector< std::shared_ptr<NegatableIterator<UInt64Row>> > iters;
+  for (std::pair<uint64_t, bool> token : tokens) {
+    iters.push_back(std::make_shared<NegatableIterator<UInt64Row>>(index->iterator(
+      token.first,
+      UInt64Row{
+        (uint32_t)lower_bound,
+      }
+    ), token.second));
+  }
+
+  GeneralIntersectionIterator<UInt64Row> it(iters);
 
   return vector2obj(ffetch(&it, limit));
 }
@@ -177,6 +235,7 @@ static PyMethodDef U64CpotMethods[] = {
  { "count", count, METH_VARARGS, "Returns how many times a token occurs" },
  { "fetch", fetch, METH_VARARGS, "Returns all documents associated with the given token" },
  { "intersect", intersect, METH_VARARGS, "Returns all documents associated with all of the given tokens" },
+ { "generalized_intersect", generalized_intersect, METH_VARARGS, "Like intersect but takes (token, isNegated) tuples rather than simply tokens" },
  { NULL, NULL, 0, NULL }
 };
 

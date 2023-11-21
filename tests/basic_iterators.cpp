@@ -84,7 +84,7 @@ TEST(IntersectionTests, IntersectRandom) {
     EXPECT_NE(it, nullptr);
 
     if (groundTruth.size() == 0) {
-      ASSERT_EQ(it->next(), UInt64Row::largest());
+      ASSERT_EQ(it->currentValue, UInt64Row::largest());
       continue;
     }
     ASSERT_EQ(it->currentValue, groundTruth[0]);
@@ -131,7 +131,7 @@ TEST(IntersectionTests, UnionRandom) {
     EXPECT_NE(it, nullptr);
 
     if (groundTruth.size() == 0) {
-      ASSERT_EQ(it->next(), UInt64Row::largest());
+      ASSERT_EQ(it->currentValue, UInt64Row::largest());
       continue;
     }
     ASSERT_EQ(it->currentValue, groundTruth[0]);
