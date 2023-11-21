@@ -41,7 +41,11 @@ struct VectorIterator : public IteratorInterface<T> {
 
   // Trivial implementation for testing purposes.
   T next() override {
-    return this->skip_to(this->currentValue);
+    auto it = std::lower_bound(this->data.begin(), this->data.end(), this->currentValue);
+    if (it == data.end() || it + 1 == data.end()) {
+      return this->currentValue = T::largest();
+    }
+    return this->currentValue = *(it + 1);
   }
  private:
   std::vector<T> data;
