@@ -7,8 +7,6 @@ namespace cpot {
 
 template<class T>
 struct IteratorInterface {
-  IteratorInterface() : currentValue(T::smallest()) {}
-
   T currentValue;
 
   // Returns the smallest value that is greater than or equal to val
@@ -31,6 +29,13 @@ T max(const std::vector<T>& A) {
 
 template<class T>
 struct VectorIterator : public IteratorInterface<T> {
+  VectorIterator(std::vector<T> data) : data(data) {
+    if (data.size() == 0) {
+      this->currentValue = T::largest();
+    } else {
+      this->currentValue = data[0];
+    }
+  }
   T skip_to(T val) override {
     auto it = std::lower_bound(this->data.begin(), this->data.end(), val);
     if (it == data.end()) {
@@ -53,7 +58,12 @@ struct VectorIterator : public IteratorInterface<T> {
 
 template<class Row>
 struct IntersectionIterator : public IteratorInterface<Row> {
-  IntersectionIterator(std::vector<std::shared_ptr<IteratorInterface<Row>>>& iters) : iters(iters) {}
+  IntersectionIterator(std::vector<std::shared_ptr<IteratorInterface<Row>>>& iters) : iters(iters) {
+    if (iters.size() == 0) {
+      throw std::runtime_error("UnionIterator requires at least one iterator");
+    }
+    this->skip_to(Row::smallest());
+  }
   Row skip_to(Row row) override {
     std::vector<Row> vals(iters.size());
     for (size_t i = 0; i < iters.size(); ++i) {
@@ -93,6 +103,7 @@ struct UnionIterator : public IteratorInterface<Row> {
     if (iters.size() == 0) {
       throw std::runtime_error("UnionIterator requires at least one iterator");
     }
+    this->skip_to(Row::smallest());
   }
   Row skip_to(Row row) override {
     Row result = Row::smallest();
@@ -115,7 +126,7 @@ struct UnionIterator : public IteratorInterface<Row> {
     }
     for (size_t i = 0; i < this->iters.size(); ++i) {
       if (this->iters[i]->currentValue == low) {
-        this->iters[i]->step();
+        this->iters[i]->next();
       }
     }
     this->currentValue = this->__lowest();
