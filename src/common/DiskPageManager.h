@@ -10,31 +10,27 @@ struct DiskPageManager : public PageManager<Page> {
   DiskPageManager() = delete;
   DiskPageManager(const std::string& filename)
   : filename_(filename) {
-    file_ = fopen(filename.c_str(), "r+");
+    file_ = fopen(filename.c_str(), "rb+");
     if (file_ == nullptr) {
       file_ = fopen(filename.c_str(), "wb");
       fclose(file_);
-      file_ = fopen(filename.c_str(), "r+");
+      file_ = fopen(filename.c_str(), "rb+");
     }
     fseek(file_, 0, SEEK_END);
     numPages_ = ftell(file_) / sizeof(Page);
 
     std::string headerFilename = this->_header_filename();
-    FILE *headerFile = fopen(headerFilename.c_str(), "r+");
+    FILE *headerFile = fopen(headerFilename.c_str(), "rb+");
     if (headerFile == nullptr) {
       headerFile = fopen(headerFilename.c_str(), "wb");
       fclose(headerFile);
-      headerFile = fopen(headerFilename.c_str(), "r+");
+      headerFile = fopen(headerFilename.c_str(), "rb+");
     }
 
     fseek(headerFile, 0, SEEK_END);
-    long fsize = ftell(headerFile);
+    availablePages_.resize(ftell(headerFile) / sizeof(PageLoc));
     fseek(headerFile, 0, SEEK_SET);
-    for (long i = 0; i < fsize; ++i) {
-      uint64_t index;
-      fread(&index, 1, sizeof(PageLoc), headerFile);
-      availablePages_.push_back(index);
-    }
+    fread(&availablePages_[0], sizeof(PageLoc), availablePages_.size(), headerFile);
     fclose(headerFile);
   }
   std::string _header_filename() const {
@@ -111,9 +107,9 @@ struct DiskPageManager : public PageManager<Page> {
       it->second->write(file_);
     }
     std::string headerFilename = this->_header_filename();
-    FILE *headerFile = fopen(headerFilename.c_str(), "w");
+    FILE *headerFile = fopen(headerFilename.c_str(), "wb");
     fseek(headerFile, 0, SEEK_SET);
-    fwrite(&availablePages_[0], availablePages_.size(), sizeof(PageLoc), headerFile);
+    fwrite(&availablePages_[0], sizeof(PageLoc), availablePages_.size(), headerFile);
     fclose(headerFile);
   }
   void flush() override {
@@ -131,7 +127,7 @@ struct DiskPageManager : public PageManager<Page> {
     this->flush();
     fclose(file_);
   }
-  std::vector<uint64_t> availablePages_;
+  std::vector<PageLoc> availablePages_;
   std::string filename_;
   FILE *file_;
   PageLoc numPages_;

@@ -395,6 +395,7 @@ struct SkipTree {
       idx--;
     }
 
+    assert(idx < knode->length);
     Node const *kChild = pageManager_->load_page(knode->value.internal.children[idx]);
 
     assert(knode->depth < 20);
