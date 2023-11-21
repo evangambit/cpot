@@ -1,6 +1,8 @@
 #ifndef ITERATOR_H
 #define ITERATOR_H
 
+#include <vector>
+
 namespace cpot {
 
 template<class T>
@@ -26,6 +28,24 @@ T max(const std::vector<T>& A) {
   }
   return r;
 }
+
+template<class T>
+struct VectorIterator : public IteratorInterface<T> {
+  T skip_to(T val) override {
+    auto it = std::lower_bound(this->data.begin(), this->data.end(), val);
+    if (it == data.end()) {
+      return this->currentValue = T::largest();
+    }
+    return this->currentValue = *it;
+  }
+
+  // Trivial implementation for testing purposes.
+  T next() override {
+    return this->skip_to(this->currentValue);
+  }
+ private:
+  std::vector<T> data;
+};
 
 template<class Row>
 struct IntersectionIterator : public IteratorInterface<Row> {
