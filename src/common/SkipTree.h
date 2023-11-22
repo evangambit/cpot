@@ -745,13 +745,16 @@ struct SkipTree {
 
   struct Iterator : public IteratorInterface<Row> {
     Iterator(std::shared_ptr<SkipTree> tree, Row low, Row high)
-    : low(low), high(high), tree_(tree) {
-      this->skip_to(low);
+    : low_(low), high_(high), tree_(tree) {
+      this->skip_to(low_);
     }
     // Returns the smallest value that is greater than or equal to val
     Row skip_to(Row val) override {
+      if (val < low_) {
+        val = low_;
+      }
       loc_ = tree_->_lower_bound(val);
-      if (loc_.first != nullptr && loc_.first->value.leaf.rows[loc_.second] < high) {
+      if (loc_.first != nullptr && loc_.first->value.leaf.rows[loc_.second] < high_) {
         this->currentValue = loc_.first->value.leaf.rows[loc_.second];
       } else {
         this->currentValue = Row::largest();
@@ -773,14 +776,14 @@ struct SkipTree {
         loc_.first = tree_->pageManager_->load_page(loc_.first->next);
         loc_.second = 0;
       }
-      if (loc_.first->value.leaf.rows[loc_.second] < high) {
+      if (loc_.first->value.leaf.rows[loc_.second] < high_) {
         this->currentValue = loc_.first->value.leaf.rows[loc_.second];
       } else {
         this->currentValue = Row::largest();
       }
       return this->currentValue;
     }
-    Row low, high;
+    Row low_, high_;
     std::shared_ptr<SkipTree> tree_;
     std::pair<Node const *, uint16_t> loc_;
   };

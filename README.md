@@ -47,7 +47,13 @@ results = index.intersect([2, 3], lower_bound=1000, limit=5)
 print(results)  # [1002, 1008, 1014, 1020, 1026]
 ```
 
-There are two types of indices: the standard `cpot.Index` which stores postinglists (actually trees)
+There are two types of indices:
+
+1. `cpot.Index` simply stores (token, docid) pairs.
+
+2. `cpot.KVIndex` stores (token, docid, value) pairs.
+
+You can roughly think of the data structure backing these indices as a BTree of these tuples. When you ask for (e.g.) an intersection of a set of tokens, the results will generally be returned in sorted order.
 
 ## Tests
 
