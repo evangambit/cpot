@@ -1,12 +1,22 @@
 import cpot
 
+import time
 
+t0 = time.time()
 index = cpot.KVIndex('foo')
-for docid in range(1, 100_000):
-	for token in range(1, 100):
+t1 = time.time()
+for docid in range(1, 500_000):
+	for token in range(1, 500):
 		if docid % token == 0:
 			index.insert(token, docid, 1)
 index.flush()
+t2 = time.time()
+index.generalized_intersect([(2, False), (3, True)], limit=10_000)
+t3 = time.time()
+
+print('%.3f' % (t1 - t0))
+print('%.3f' % (t2 - t1))  # 280k tokens / second
+print('%.3f' % (t3 - t2))
 
 # token = 20
 

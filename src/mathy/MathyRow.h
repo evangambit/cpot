@@ -8,8 +8,8 @@
 using namespace cpot;
 
 struct MathyRow {
-  uint32_t docid;
-  uint32_t value;
+  uint64_t docid;
+  uint64_t value;
   static MathyRow smallest() {
     return MathyRow{0};
   }

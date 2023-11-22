@@ -51,7 +51,9 @@ There are two types of indices:
 
 1. `cpot.Index` simply stores (token, docid) pairs.
 
-2. `cpot.KVIndex` stores (token, docid, value) pairs.
+2. `cpot.RankedIndex` simply stores (token, docid) pairs.
+
+3. `cpot.KVIndex` stores (token, docid, value) pairs.
 
 You can roughly think of the data structure backing these indices as a BTree of these tuples. When you ask for (e.g.) an intersection of a set of tokens, the results will generally be returned in sorted order.
 

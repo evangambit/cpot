@@ -1,73 +1,73 @@
-import u64cpot as _u64cpot
-import kvcpot as _kvcpot
+import ccpot as _cpot
 
-class KVIndex:
-  def __init__(self, path):
-    self.index = _kvcpot.newIndex(path)
+# UInt64 = 1,
+# Mathy = 2,
 
-  def insert(self, token, docid, value = 1):
-    _kvcpot.insert(self.index, token, docid, 1)
+class BaseIndex:
+  def __init__(self, indexType, path):
+    assert indexType in [1, 2]
+    self.indexType = indexType
+    self.index = _cpot.newIndex(self.indexType, path)
+
+  @staticmethod
+  def assert_valid_row(row):
+    assert False
+
+  @staticmethod
+  def smallest_row():
+    assert False
+
+  def insert(self, token, obj):
+    _cpot.insert(self.indexType, self.index, token, obj)
 
   def flush(self):
-    _kvcpot.flush(self.index)
+    _cpot.flush(self.indexType, self.index)
 
   def current_memory(self):
-    return _kvcpot.currentMemoryUsed(self.index)
+    return _cpot.currentMemoryUsed(self.indexType, self.index)
 
-  def fetch(self, token, lower_bound=(0, 0), limit = 10):
-    docid, value = lower_bound
-    return _kvcpot.fetch(self.index, token, docid, value, limit)
-
-  def intersect(self, tokens: list, lower_bound=(0, 0), limit = 10):
+  def intersect(self, tokens: list, lower_bound=None, limit = 10):
+    if lower_bound is None:
+      lower_bound = self.smallest_row()
     for token in tokens:
       assert isinstance(token, int)
-    docid, value = lower_bound
-    assert isinstance(docid, int)
-    assert isinstance(value, int)
+    self.assert_valid_row(lower_bound)
     assert isinstance(limit, int)
-    return _kvcpot.intersect(self.index, tokens, docid, value, limit)
+    return _cpot.intersect(self.indexType, self.index, tokens, lower_bound, limit)
 
-  def generalized_intersect(self, tokens: list, lower_bound=(0, 0), limit = 10):
+  def generalized_intersect(self, tokens: list, lower_bound=None, limit = 10):
+    if lower_bound is None:
+      lower_bound = self.smallest_row()
     for token in tokens:
       assert len(token) == 2
       assert isinstance(token[0], int)
       assert isinstance(token[1], bool)
-    docid, value = lower_bound
-    assert isinstance(docid, int)
-    assert isinstance(value, int)
+    self.assert_valid_row(lower_bound)
     assert isinstance(limit, int)
-    return _kvcpot.generalized_intersect(self.index, tokens, docid, value, limit)
+    return _cpot.generalized_intersect(self.indexType, self.index, tokens, lower_bound, limit)
 
-class Index:
+class KVIndex(BaseIndex):
   def __init__(self, path):
-    self.index = _u64cpot.newIndex(path)
+    super().__init__(indexType=2, path=path)
 
-  def insert(self, token, docid):
-    _u64cpot.insert(self.index, token, docid)
+  @staticmethod
+  def assert_valid_row(row):
+    assert len(row) == 2
+    assert isinstance(row[0], int)
+    assert isinstance(row[1], int)
 
-  def flush(self):
-    _u64cpot.flush(self.index)
+  @staticmethod
+  def smallest_row():
+    return (0, 0)
 
-  def current_memory(self):
-    return _u64cpot.currentMemoryUsed(self.index)
+class IntIndex(BaseIndex):
+  def __init__(self, path):
+    super().__init__(indexType=1, path=path)
 
-  def fetch(self, token, lower_bound=0, limit = 10):
-    for token in tokens:
-      assert isinstance(token, int)
-    return _u64cpot.fetch(self.index, token, lower_bound, limit)
+  @staticmethod
+  def assert_valid_row(row):
+    assert isinstance(row, int)
 
-  def intersect(self, tokens: list, lower_bound=0, limit = 10):
-    for token in tokens:
-      assert isinstance(token, int)
-    assert isinstance(lower_bound, int)
-    assert isinstance(limit, int)
-    return _u64cpot.intersect(self.index, tokens, lower_bound, limit)
-
-  def generalized_intersect(self, tokens: list, lower_bound=0, limit = 10):
-    for token in tokens:
-      assert len(token) == 2
-      assert isinstance(token[0], int)
-      assert isinstance(token[1], bool)
-    assert isinstance(lower_bound, int)
-    assert isinstance(limit, int)
-    return _u64cpot.generalized_intersect(self.index, tokens, lower_bound, limit)
+  @staticmethod
+  def smallest_row():
+    return 0
