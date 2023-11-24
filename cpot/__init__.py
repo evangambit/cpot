@@ -12,7 +12,7 @@ class IndexType(IntEnum):
 
 class BaseIndex:
   def __init__(self, indexType, path):
-    self.assert_valid(indexType)
+    IndexType.assert_valid(indexType)
     self.indexType = indexType
     self.index = _cpot.newIndex(self.indexType, path)
 
@@ -53,9 +53,20 @@ class BaseIndex:
     assert isinstance(limit, int)
     return _cpot.generalized_intersect(self.indexType, self.index, tokens, lower_bound, limit)
 
+  def token_iterator(self, token, lower_bound = None):
+    if lower_bound is None:
+      lower_bound = self.smallest_row()
+    assert isinstance(token, int)
+    self.assert_valid_row(lower_bound)
+    return _cpot.token_iterator(self.indexType, self.index, token, lower_bound)
+
+  def fetch_many(self, iterator, limit: int):
+    assert isinstance(limit, int)
+    return _cpot.fetch_many(self.indexType, iterator, limit)
+
 class KVIndex(BaseIndex):
   def __init__(self, path):
-    super().__init__(indexType=Mathy, path=path)
+    super().__init__(indexType=IndexType.Mathy, path=path)
 
   @staticmethod
   def assert_valid_row(row):
@@ -69,7 +80,7 @@ class KVIndex(BaseIndex):
 
 class IntIndex(BaseIndex):
   def __init__(self, path):
-    super().__init__(indexType=UInt64, path=path)
+    super().__init__(indexType=IndexType.UInt64, path=path)
 
   @staticmethod
   def assert_valid_row(row):

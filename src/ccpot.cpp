@@ -28,6 +28,9 @@ struct IndexNamer {
   static const char* name() {
     return "";
   }
+  static const char* iterator_name() {
+    return "";
+  }
 };
 
 template<>
@@ -35,12 +38,18 @@ struct IndexNamer<UInt64Row> {
   static const char* name() {
     return "UInt64Index";
   }
+  static const char* iterator_name() {
+    return "UInt64Iterator";
+  }
 };
 
 template<>
 struct IndexNamer<MathyRow> {
   static const char* name() {
     return "MathyIndex";
+  }
+  static const char* iterator_name() {
+    return "MathyIterator";
   }
 };
 
@@ -135,6 +144,29 @@ template<class Row>
 static void destroy_index_object(PyObject *indexObj) {
   InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
   delete index;
+}
+
+template<class T>
+struct IteratorWrapper {
+  std::shared_ptr<IteratorInterface<T>> ptr;
+};
+
+template<class Row>
+void destroy_iterator_object(PyObject *object) {
+  auto *wrapper = (IteratorWrapper<Row> *)PyCapsule_GetPointer(object, IndexNamer<Row>::iterator_name());
+  delete wrapper;
+}
+
+template<class Row>
+PyObject *iterator_to_object(std::shared_ptr<IteratorInterface<Row>> ptr) {
+  auto *wrapper = new IteratorWrapper<Row>{ptr};
+  return PyCapsule_New((void *)wrapper, IndexNamer<Row>::iterator_name(), destroy_iterator_object<Row>);
+}
+
+template<class Row>
+std::shared_ptr<IteratorInterface<Row>> object_to_iterator(PyObject *object) {
+  auto *wrapper = (IteratorWrapper<Row> *)PyCapsule_GetPointer(object, IndexNamer<Row>::iterator_name());
+  return wrapper->ptr;
 }
 
 template<class Row>
@@ -257,6 +289,22 @@ struct Index {
     GeneralIntersectionIterator<Row> it(iters);
 
     return vector2obj(ffetch(&it, limit));
+  }
+
+  static PyObject *token_iterator(PyObject *indexObj, uint64_t token, PyObject *lowerBoundObj) {
+    InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    Row lowerBound;
+    if (!objectToRow(lowerBoundObj, &lowerBound)) {
+      return NULL;
+    }
+    std::shared_ptr<IteratorInterface<Row>> iterator = index->iterator(token, lowerBound);
+
+    return iterator_to_object(iterator);
+  }
+
+  static PyObject *fetch_many(PyObject *iteratorObj, uint64_t limit) {
+    std::shared_ptr<IteratorInterface<Row>> iterator = object_to_iterator<Row>(iteratorObj);
+    return vector2obj(ffetch(iterator, limit));
   }
 
 };
@@ -405,6 +453,47 @@ static PyObject *generalized_intersect(PyObject *self, PyObject *args) {
   }
 }
 
+static PyObject *token_iterator(PyObject *self, PyObject *args) {
+  uint64_t rowTypeInt;
+  PyObject* indexObj = NULL;
+  uint64_t token;
+  PyObject *lowerBound;
+  if(!PyArg_ParseTuple(args, "KOKO", &rowTypeInt, &indexObj, &token, &lowerBound)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+
+  switch (RowType(rowTypeInt)) {
+    case RowType::UInt64:
+      return Index<UInt64Row>::token_iterator(indexObj, token, lowerBound);
+    case RowType::Mathy:
+      return Index<MathyRow>::token_iterator(indexObj, token, lowerBound);
+    default:
+      PyErr_SetString(PyExc_TypeError, "Invalid row type");
+      return NULL;
+  }
+}
+
+static PyObject *fetch_many(PyObject *self, PyObject *args) {
+  uint64_t rowTypeInt;
+  PyObject* iteratorObj = NULL;
+  uint64_t limit;
+  if(!PyArg_ParseTuple(args, "KOK", &rowTypeInt, &iteratorObj, &limit)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+
+  switch (RowType(rowTypeInt)) {
+    case RowType::UInt64:
+      return Index<UInt64Row>::fetch_many(iteratorObj, limit);
+    case RowType::Mathy:
+      return Index<MathyRow>::fetch_many(iteratorObj, limit);
+    default:
+      PyErr_SetString(PyExc_TypeError, "Invalid row type");
+      return NULL;
+  }
+}
+
 static PyMethodDef CcpotMethods[] = {
  { "newIndex", newIndex, METH_VARARGS, "Create a new index" },
  { "currentMemoryUsed", currentMemoryUsed, METH_VARARGS, "The amount of memory currently used" },
@@ -413,6 +502,8 @@ static PyMethodDef CcpotMethods[] = {
  { "count", count, METH_VARARGS, "Returns how many times a token occurs" },
  { "intersect", intersect, METH_VARARGS, "Returns all documents associated with all of the given tokens" },
  { "generalized_intersect", generalized_intersect, METH_VARARGS, "Like intersect but takes (token, isNegated) tuples rather than simply tokens" },
+ { "token_iterator", token_iterator, METH_VARARGS, "TODO" },
+ { "fetch_many", fetch_many, METH_VARARGS, "TODO" },
  { NULL, NULL, 0, NULL }
 };
 
