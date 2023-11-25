@@ -66,6 +66,9 @@ class BaseIndex:
       assert isinstance(iterator[1], bool)
     return _cpot.generalized_intersection_iterator(self.indexType, iterators)
 
+  def union_iterator(self, iterators):
+    return _cpot.union_iterator(self.indexType, iterators)
+
   def fetch_many(self, iterator, limit: int):
     assert isinstance(limit, int)
     return _cpot.fetch_many(self.indexType, iterator, limit)

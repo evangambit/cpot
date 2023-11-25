@@ -94,7 +94,7 @@ struct IntersectionIterator : public IteratorInterface<Row> {
     this->skip_to(this->currentValue.next());
     return this->currentValue;
   }
-  std::vector<std::shared_ptr<IteratorInterface<Row>>>& iters;
+  const std::vector<std::shared_ptr<IteratorInterface<Row>>> iters;
 };
 
 template<class Row>
@@ -142,7 +142,7 @@ struct UnionIterator : public IteratorInterface<Row> {
     }
     return r;
   }
-  std::vector<std::shared_ptr<IteratorInterface<Row>>>& iters;
+  const std::vector<std::shared_ptr<IteratorInterface<Row>>> iters;
 };
 
 template<class Row>

@@ -346,9 +346,25 @@ struct Index {
     return iterator_to_object<Row>(iterator);
   }
 
+  static PyObject *union_iterator(PyObject *iteratorList) {
+    std::vector<std::shared_ptr<IteratorInterface<Row>>> iterators;
+    const size_t n = PyList_GET_SIZE(iteratorList);
+    for (size_t i = 0; i < n; ++i) {
+      PyObject *iteratorObj = PyList_GET_ITEM(iteratorList, i);
+      if (!PyCapsule_CheckExact(iteratorObj)) {
+        PyErr_SetString(PyExc_TypeError, "Iterator is not a capsule");
+        return NULL;
+      }
+      iterators.push_back(object_to_iterator<Row>(iteratorObj));
+    }
+    auto iterator = std::make_shared<UnionIterator<Row>>(iterators);
+    return iterator_to_object<Row>(iterator);
+  }
+
   static PyObject *fetch_many(PyObject *iteratorObj, uint64_t limit) {
     std::shared_ptr<IteratorInterface<Row>> iterator = object_to_iterator<Row>(iteratorObj);
-    return vector2obj(ffetch(iterator, limit));
+    std::vector<Row> rows = ffetch(iterator, limit);
+    return vector2obj(rows);
   }
 
 };
@@ -537,6 +553,26 @@ static PyObject *generalized_intersection_iterator(PyObject *self, PyObject *arg
   }
 }
 
+static PyObject *union_iterator(PyObject *self, PyObject *args) {
+  uint64_t rowTypeInt;
+  PyObject* tokenList;
+  if(!PyArg_ParseTuple(args, "KO", &rowTypeInt, &tokenList)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+
+
+  switch (RowType(rowTypeInt)) {
+    case RowType::UInt64:
+      return Index<UInt64Row>::union_iterator(tokenList);
+    case RowType::Mathy:
+      return Index<MathyRow>::union_iterator(tokenList);
+    default:
+      PyErr_SetString(PyExc_TypeError, "Invalid row type");
+      return NULL;
+  }
+}
+
 static PyObject *fetch_many(PyObject *self, PyObject *args) {
   uint64_t rowTypeInt;
   PyObject* iteratorObj = NULL;
@@ -567,6 +603,7 @@ static PyMethodDef CcpotMethods[] = {
  { "generalized_intersect", generalized_intersect, METH_VARARGS, "Like intersect but takes (token, isNegated) tuples rather than simply tokens" },
  { "token_iterator", token_iterator, METH_VARARGS, "TODO" },
  { "generalized_intersection_iterator", generalized_intersection_iterator, METH_VARARGS, "TODO" },
+ { "union_iterator", union_iterator, METH_VARARGS, "TODO" },
  { "fetch_many", fetch_many, METH_VARARGS, "TODO" },
  { NULL, NULL, 0, NULL }
 };
