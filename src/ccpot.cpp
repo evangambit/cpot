@@ -193,6 +193,18 @@ struct Index {
     return Py_None;
   }
 
+  static PyObject *remove(PyObject *indexObj, uint64_t token, PyObject *rowObj) {
+    InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    Row row;
+    if (!objectToRow(rowObj, &row)) {
+      PyErr_SetString(PyExc_TypeError, "invalid row");
+      return NULL;
+    }
+    index->remove(token, row);
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
   static PyObject *count(PyObject *indexObj, uint64_t token) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
     return Py_BuildValue("k", index->count(token));
@@ -429,6 +441,27 @@ static PyObject *insert(PyObject *self, PyObject *args) {
   }
 }
 
+static PyObject *remove(PyObject *self, PyObject *args) {
+  PyObject *indexObj = NULL;
+  PyObject *rowObj;
+  uint64_t token;
+  uint64_t rowTypeInt;
+  if(!PyArg_ParseTuple(args, "KOKO", &rowTypeInt, &indexObj, &token, &rowObj)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+
+  switch (RowType(rowTypeInt)) {
+    case RowType::IntIndex:
+      return Index<UInt64Row>::remove(indexObj, token, rowObj);
+    case RowType::IntPairIndex:
+      return Index<IntPairRow>::remove(indexObj, token, rowObj);
+    default:
+      PyErr_SetString(PyExc_TypeError, "Invalid row type");
+      return NULL;
+  }
+}
+
 static PyObject *count(PyObject *self, PyObject *args) {
   PyObject *indexObj = NULL;
   uint64_t token;
@@ -597,6 +630,7 @@ static PyMethodDef CcpotMethods[] = {
  { "newIndex", newIndex, METH_VARARGS, "Create a new index" },
  { "currentMemoryUsed", currentMemoryUsed, METH_VARARGS, "The amount of memory currently used" },
  { "insert", insert, METH_VARARGS, "Insert a token/doc pair" },
+ { "remove", remove, METH_VARARGS, "Delete a token/doc pair" },
  { "flush", flush, METH_VARARGS, "Save the current changes to disk" },
  { "count", count, METH_VARARGS, "Returns how many times a token occurs" },
  { "intersect", intersect, METH_VARARGS, "Returns all documents associated with all of the given tokens" },

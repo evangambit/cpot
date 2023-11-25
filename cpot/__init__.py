@@ -27,6 +27,9 @@ class BaseIndex:
   def insert(self, token, obj):
     _cpot.insert(self.indexType, self.index, token, obj)
 
+  def remove(self, token, obj):
+    _cpot.remove(self.indexType, self.index, token, obj)
+
   def flush(self):
     _cpot.flush(self.indexType, self.index)
 
