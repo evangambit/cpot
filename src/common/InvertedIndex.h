@@ -172,8 +172,16 @@ struct InvertedIndex {
     }
   }
 
-  void remove(Token token, Row row) {
-    // todo
+  bool remove(Token token, Row row) {
+    TokenRow *tokenRow = this->header->find_and_write(TokenRow{token, 0, 0});
+    if (tokenRow == nullptr) {
+      return false;
+    }
+    if (tokenRow->root == kNullPage) {
+      return rareTree->remove(RareRow{token, row});
+    }
+    auto collection = this->collection(token, tokenRow->root);
+    return collection->remove(row);
   }
 
   std::vector<Row> all(Token token) {

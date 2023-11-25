@@ -200,9 +200,8 @@ struct Index {
       PyErr_SetString(PyExc_TypeError, "invalid row");
       return NULL;
     }
-    index->remove(token, row);
-    Py_INCREF(Py_None);
-    return Py_None;
+    bool result = index->remove(token, row);
+    return PyBool_FromLong(result);
   }
 
   static PyObject *count(PyObject *indexObj, uint64_t token) {
