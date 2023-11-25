@@ -4,7 +4,7 @@
 #include <set>
 
 #include "../src/common/Iterator.h"
-#include "../src/uint64/UInt64Row.h"
+#include "../src/UInt64Row.h"
 
 using namespace cpot;
 

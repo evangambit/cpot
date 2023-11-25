@@ -6,7 +6,7 @@
 #include "../src/common/Iterator.h"
 #include "../src/common/utils.h"
 #include "../src/common/GeneralIntersectionIterator.h"
-#include "../src/uint64/UInt64Row.h"
+#include "../src/UInt64Row.h"
 
 using namespace cpot;
 

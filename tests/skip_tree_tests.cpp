@@ -7,7 +7,7 @@
 #include "../src/common/SkipTree.h"
 #include "../src/common/MemoryPageManager.h"
 #include "../src/common/DiskPageManager.h"
-#include "../src/uint64/UInt64Row.h"
+#include "../src/UInt64Row.h"
 
 using namespace cpot;
 

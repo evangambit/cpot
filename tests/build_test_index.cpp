@@ -9,7 +9,7 @@
 
 #include "../src/common/InvertedIndex.h"
 #include "../src/common/utils.h"
-#include "../src/uint64/UInt64Row.h"
+#include "../src/UInt64Row.h"
 
 using namespace cpot;
 
