@@ -29,10 +29,10 @@ TEST(IntersectionTests, IntersectRandom) {
       B.insert(UInt64Row{uint64_t(rand() % 10)});
       C.insert(UInt64Row{uint64_t(rand() % 10)});
     }
-    std::vector<std::shared_ptr<NegatableIterator<UInt64Row>>> iters = {
-      std::make_shared<NegatableIterator<UInt64Row>>(make_iterator(A), false),
-      std::make_shared<NegatableIterator<UInt64Row>>(make_iterator(B), false),
-      std::make_shared<NegatableIterator<UInt64Row>>(make_iterator(C), true),
+    std::vector<std::pair<std::shared_ptr<IteratorInterface<UInt64Row>>, bool>> iters = {
+      std::make_pair(make_iterator(A), false),
+      std::make_pair(make_iterator(B), false),
+      std::make_pair(make_iterator(C), true),
     };
 
     std::vector<UInt64Row> aAndB;

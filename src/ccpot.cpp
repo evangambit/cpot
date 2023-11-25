@@ -278,12 +278,21 @@ struct Index {
       tokens.push_back(std::make_pair(token, isNegated));
     }
 
-    std::vector< std::shared_ptr<NegatableIterator<Row>> > iters;
+    std::vector<std::pair<std::shared_ptr<IteratorInterface<Row>>, bool>> iters;
+    size_t numNonNegated = 0;
     for (std::pair<uint64_t, bool> token : tokens) {
-      iters.push_back(std::make_shared<NegatableIterator<Row>>(index->iterator(
+      iters.push_back(std::make_pair(index->iterator(
         token.first,
         lowerBound
       ), token.second));
+      if (!token.second) {
+        ++numNonNegated;
+      }
+    }
+
+    if (numNonNegated == 0) {
+      PyErr_SetString(PyExc_TypeError, "At least one token must not be negated.");
+      return NULL;
     }
 
     GeneralIntersectionIterator<Row> it(iters);

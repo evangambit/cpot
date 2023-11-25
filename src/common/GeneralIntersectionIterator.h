@@ -5,38 +5,19 @@
 
 namespace cpot {
 
-template<class Row>
-struct NegatableIterator : public IteratorInterface<Row> {
-  NegatableIterator(std::shared_ptr<IteratorInterface<Row>> iter, bool isNegated)
-  : iter_(iter), isNegated(isNegated) {
-    this->currentValue = iter_->currentValue;
-  }
-
-  Row next() override {
-    return this->currentValue = iter_->next();
-  }
-
-  Row skip_to(Row row) override {
-    return this->currentValue = iter_->skip_to(row);
-  }
-
-  std::shared_ptr<IteratorInterface<Row>> iter_;
-  bool isNegated;
-};
-
 /**
  * A more sophisticated version of IntersectionIterator that can handle negated iterators.
  */
 
 template<class Row>
 struct GeneralIntersectionIterator : public IteratorInterface<Row> {
-  GeneralIntersectionIterator(std::vector<std::shared_ptr<NegatableIterator<Row>>>& iters) : iters_(iters) {
+  GeneralIntersectionIterator(std::vector<std::pair<std::shared_ptr<IteratorInterface<Row>>, bool>>& iters) : iters_(iters) {
     if (iters_.size() == 0) {
       throw std::runtime_error("GeneralIntersectionIterator requires at least one iterator");
     }
     numNonNegatedIterators_ = 0;
     for (auto it : iters_) {
-      numNonNegatedIterators_ += !it->isNegated;
+      numNonNegatedIterators_ += !it.second;
     }
     if (numNonNegatedIterators_ == 0) {
       throw std::runtime_error("GeneralIntersectionIterator requires at least one non-negated iterator");
@@ -49,11 +30,11 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
     Row r = Row::smallest();
     size_t numWithMax = 0;
     for (auto iter : iters_) {
-      if (!iter->isNegated) {
-        if (r < iter->currentValue) {
-          r = iter->currentValue;
+      if (!iter.second) {
+        if (r < iter.first->currentValue) {
+          r = iter.first->currentValue;
           numWithMax = 1;
-        } else if (r == iter->currentValue) {
+        } else if (r == iter.first->currentValue) {
           ++numWithMax;
         }
       }
@@ -62,7 +43,7 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
   }
   Row skip_to(Row row) override {
     for (auto iter : iters_) {
-      iter->skip_to(row);
+      iter.first->skip_to(row);
     }
     std::pair<Row, size_t> x = this->_max_non_negated();
 
@@ -73,7 +54,7 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
       if (x.second == numNonNegatedIterators_) {
         bool isMatch = true;
         for (auto iter : iters_) {
-          if (iter->isNegated && iter->skip_to(x.first) == x.first) {
+          if (iter.second && iter.first->skip_to(x.first) == x.first) {
             isMatch = false;
             break;
           }
@@ -82,12 +63,12 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
           return this->currentValue = x.first;
         } else {
           for (auto iter : iters_) {
-            iter->next();
+            iter.first->next();
           }
         }
       } else {
         for (auto iter : iters_) {
-          iter->skip_to(x.first);
+          iter.first->skip_to(x.first);
         }
       }
       x = this->_max_non_negated();
@@ -98,7 +79,7 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
     this->skip_to(this->currentValue.next());
     return this->currentValue;
   }
-  std::vector<std::shared_ptr<NegatableIterator<Row>>>& iters_;
+  std::vector<std::pair<std::shared_ptr<IteratorInterface<Row>>, bool>>& iters_;
   size_t numNonNegatedIterators_;
 };
 
