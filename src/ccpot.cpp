@@ -311,6 +311,41 @@ struct Index {
     return iterator_to_object(iterator);
   }
 
+  static PyObject *generalized_intersection_iterator(PyObject *iteratorList) {
+    std::vector<std::pair<std::shared_ptr<IteratorInterface<Row>>, bool>> iterators;
+
+    const size_t n = PyList_GET_SIZE(iteratorList);
+    for (size_t i = 0; i < n; ++i) {
+      PyObject *tuple = PyList_GET_ITEM(iteratorList, i);
+      if (!PyTuple_CheckExact(tuple)) {
+        PyErr_SetString(PyExc_TypeError, "Iterator is not a tuple");
+        return NULL;
+      }
+      if (PyTuple_Size(tuple) != 2) {
+        PyErr_SetString(PyExc_TypeError, "Iterator is not the correct length");
+        return NULL;
+      }
+      PyObject *iteratorObj = PyTuple_GetItem(tuple, 0);
+      PyObject *negatedObj = PyTuple_GetItem(tuple, 1);
+
+      if (!PyCapsule_CheckExact(iteratorObj)) {
+        PyErr_SetString(PyExc_TypeError, "Iterator[0] is not a capsule");
+        return NULL;
+      }
+      if (!PyBool_Check(negatedObj)) {
+        PyErr_SetString(PyExc_TypeError, "Iterator[1] is not a boolean");
+        return NULL;
+      }
+
+      bool isNegated = PyObject_IsTrue(negatedObj);
+
+      iterators.push_back(std::make_pair(object_to_iterator<Row>(iteratorObj), isNegated));
+    }
+
+    auto iterator = std::make_shared<GeneralIntersectionIterator<Row>>(iterators);
+    return iterator_to_object<Row>(iterator);
+  }
+
   static PyObject *fetch_many(PyObject *iteratorObj, uint64_t limit) {
     std::shared_ptr<IteratorInterface<Row>> iterator = object_to_iterator<Row>(iteratorObj);
     return vector2obj(ffetch(iterator, limit));
@@ -483,6 +518,25 @@ static PyObject *token_iterator(PyObject *self, PyObject *args) {
   }
 }
 
+static PyObject *generalized_intersection_iterator(PyObject *self, PyObject *args) {
+  uint64_t rowTypeInt;
+  PyObject* tokenList;
+  if(!PyArg_ParseTuple(args, "KO", &rowTypeInt, &tokenList)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+
+  switch (RowType(rowTypeInt)) {
+    case RowType::UInt64:
+      return Index<UInt64Row>::generalized_intersection_iterator(tokenList);
+    case RowType::Mathy:
+      return Index<MathyRow>::generalized_intersection_iterator(tokenList);
+    default:
+      PyErr_SetString(PyExc_TypeError, "Invalid row type");
+      return NULL;
+  }
+}
+
 static PyObject *fetch_many(PyObject *self, PyObject *args) {
   uint64_t rowTypeInt;
   PyObject* iteratorObj = NULL;
@@ -512,6 +566,7 @@ static PyMethodDef CcpotMethods[] = {
  { "intersect", intersect, METH_VARARGS, "Returns all documents associated with all of the given tokens" },
  { "generalized_intersect", generalized_intersect, METH_VARARGS, "Like intersect but takes (token, isNegated) tuples rather than simply tokens" },
  { "token_iterator", token_iterator, METH_VARARGS, "TODO" },
+ { "generalized_intersection_iterator", generalized_intersection_iterator, METH_VARARGS, "TODO" },
  { "fetch_many", fetch_many, METH_VARARGS, "TODO" },
  { NULL, NULL, 0, NULL }
 };

@@ -60,6 +60,12 @@ class BaseIndex:
     self.assert_valid_row(lower_bound)
     return _cpot.token_iterator(self.indexType, self.index, token, lower_bound)
 
+  def generalized_intersection_iterator(self, iterators):
+    for iterator in iterators:
+      assert isinstance(iterator, tuple)
+      assert isinstance(iterator[1], bool)
+    return _cpot.generalized_intersection_iterator(self.indexType, iterators)
+
   def fetch_many(self, iterator, limit: int):
     assert isinstance(limit, int)
     return _cpot.fetch_many(self.indexType, iterator, limit)

@@ -72,14 +72,14 @@ struct GeneralIntersectionIterator : public IteratorInterface<Row> {
         }
       }
       x = this->_max_non_negated();
-    }
+    };
   }
   Row next() override {
     // TODO: make this more efficient.
     this->skip_to(this->currentValue.next());
     return this->currentValue;
   }
-  std::vector<std::pair<std::shared_ptr<IteratorInterface<Row>>, bool>>& iters_;
+  const std::vector<std::pair<std::shared_ptr<IteratorInterface<Row>>, bool>> iters_;
   size_t numNonNegatedIterators_;
 };
 
