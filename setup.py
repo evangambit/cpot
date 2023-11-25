@@ -7,7 +7,7 @@ setup(
   Extension(
     "ccpot",
     sources=["src/ccpot.cpp"],
-    extra_compile_args=["-std=c++2a"],
+    extra_compile_args=["-std=c++2a", "-O3"],
   ),
   # Extension(
   #   "kvcpot",

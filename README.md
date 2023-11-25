@@ -28,34 +28,31 @@ python3 -m pip install .
 import cpot
 
 # Create an index.
-index = cpot.Index('foo')
+index = cpot.IntPairIndex('foo')
 
-# Insert (token, docid) pairs.
-for docid in range(1, 500_000):
-	for token in range(1, 500):
-		if docid % token == 0:
-			index.insert(token=token, docid=docid)
+for page in pages:
+	for token in page['tokens']:
+		index.insert(token=token, obj=(page['rank'], page['id']))
 
 # Save to disk and clear RAM.
 index.flush()
 
 # Fetch documents with tokens 2 and 3.
-# Results are ordered by docid.
-# Ignore documents whose docid is less than 1000.
-results = index.intersect([2, 3], lower_bound=1000, limit=5)
+# Results are ordered low-to-high by (rank, id).
+# Skip documents whose rank is less than 100.
+results = index.intersect([2, 3], lower_bound=(100, 0), limit=5)
 
 print(results)  # [1002, 1008, 1014, 1020, 1026]
 ```
 
+You can roughly think of indices as an index as a B-tree (or, equivalently, as a B-tree
+for every token). When you make queries / create iterators, results are sorted in ascending order.
+
 There are two types of indices:
 
-1. `cpot.Index` simply stores (token, docid) pairs.
+1. `cpot.IntIndex` stores (token, docid) pairs.
 
-2. `cpot.RankedIndex` simply stores (token, docid) pairs.
-
-3. `cpot.KVIndex` stores (token, docid, value) pairs.
-
-You can roughly think of the data structure backing these indices as a BTree of these tuples. When you ask for (e.g.) an intersection of a set of tokens, the results will generally be returned in sorted order.
+2. `cpot.IntPairIndex` stores (token, rank, docid) tuples. This is useful when your documents have a standard order (e.g. a timestamp, page rank, etc.). Remember, results returned lowest to highest, so a *low* rank will be returned first.
 
 ## Tests
 
