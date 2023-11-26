@@ -64,6 +64,7 @@ class BaseIndex:
     return _cpot.token_iterator(self.indexType, self.index, token, lower_bound)
 
   def generalized_intersection_iterator(self, iterators):
+    assert lne(iterator) > 0
     for iterator in iterators:
       assert isinstance(iterator, tuple)
       assert isinstance(iterator[1], bool)
@@ -71,6 +72,9 @@ class BaseIndex:
 
   def union_iterator(self, iterators):
     return _cpot.union_iterator(self.indexType, iterators)
+
+  def empty_iterator(self, iterators):
+    return _cpot.empty_iterator(self.indexType)
 
   def fetch_many(self, iterator, limit: int):
     assert isinstance(limit, int)

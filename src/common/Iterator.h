@@ -53,7 +53,7 @@ struct VectorIterator : public IteratorInterface<T> {
     return this->currentValue = *(it + 1);
   }
  private:
-  std::vector<T> data;
+  const std::vector<T> data;
 };
 
 template<class Row>

@@ -372,6 +372,11 @@ struct Index {
     return iterator_to_object<Row>(iterator);
   }
 
+  static PyObject *empty_iterator() {
+    auto iterator = std::make_shared<VectorIterator<Row>>(std::vector<Row>());
+    return iterator_to_object<Row>(iterator);
+  }
+
   static PyObject *fetch_many(PyObject *iteratorObj, uint64_t limit) {
     std::shared_ptr<IteratorInterface<Row>> iterator = object_to_iterator<Row>(iteratorObj);
     std::vector<Row> rows = ffetch(iterator, limit);
@@ -592,13 +597,28 @@ static PyObject *union_iterator(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_TypeError, "Invalid args");
     return NULL;
   }
-
-
   switch (RowType(rowTypeInt)) {
     case RowType::IntIndex:
       return Index<UInt64Row>::union_iterator(tokenList);
     case RowType::IntPairIndex:
       return Index<IntPairRow>::union_iterator(tokenList);
+    default:
+      PyErr_SetString(PyExc_TypeError, "Invalid row type");
+      return NULL;
+  }
+}
+
+static PyObject *empty_iterator(PyObject *self, PyObject *args) {
+  uint64_t rowTypeInt;
+  if(!PyArg_ParseTuple(args, "K", &rowTypeInt)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+  switch (RowType(rowTypeInt)) {
+    case RowType::IntIndex:
+      return Index<UInt64Row>::empty_iterator();
+    case RowType::IntPairIndex:
+      return Index<IntPairRow>::empty_iterator();
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -638,6 +658,7 @@ static PyMethodDef CcpotMethods[] = {
  { "generalized_intersection_iterator", generalized_intersection_iterator, METH_VARARGS, "TODO" },
  { "union_iterator", union_iterator, METH_VARARGS, "TODO" },
  { "fetch_many", fetch_many, METH_VARARGS, "TODO" },
+ { "empty_iterator", empty_iterator, METH_VARARGS, "TODO" },
  { NULL, NULL, 0, NULL }
 };
 
