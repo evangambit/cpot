@@ -52,6 +52,7 @@ class BaseIndex:
       assert len(token) == 2
       assert isinstance(token[0], int)
       assert isinstance(token[1], bool)
+    assert sum(1 - t[1] for t in tokens) > 0, 'Must have at least one non-negated token'
     self.assert_valid_row(lower_bound)
     assert isinstance(limit, int)
     return _cpot.generalized_intersect(self.indexType, self.index, tokens, lower_bound, limit)
@@ -68,6 +69,7 @@ class BaseIndex:
     for iterator in iterators:
       assert isinstance(iterator, tuple)
       assert isinstance(iterator[1], bool)
+    assert sum(1 - t[1] for t in tokens) > 0, 'Must have at least one non-negated token'
     return _cpot.generalized_intersection_iterator(self.indexType, iterators)
 
   def union_iterator(self, iterators):
