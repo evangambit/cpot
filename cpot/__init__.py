@@ -3,8 +3,8 @@ import ccpot as _cpot
 from enum import IntEnum
 
 class IndexType(IntEnum):
-  IntIndex = 1
-  IntPairIndex = 2
+  UInt64Index = 1
+  UInt32PairIndex = 2
 
   @staticmethod
   def assert_valid(value):
@@ -82,9 +82,9 @@ class BaseIndex:
     assert isinstance(limit, int)
     return _cpot.fetch_many(self.indexType, iterator, limit)
 
-class IntPairIndex(BaseIndex):
+class UInt32PairIndex(BaseIndex):
   def __init__(self, path):
-    super().__init__(indexType=IndexType.IntPairIndex, path=path)
+    super().__init__(indexType=IndexType.UInt32PairIndex, path=path)
 
   @staticmethod
   def assert_valid_row(row):
@@ -96,9 +96,9 @@ class IntPairIndex(BaseIndex):
   def smallest_row():
     return (0, 0)
 
-class IntIndex(BaseIndex):
+class UInt64Index(BaseIndex):
   def __init__(self, path):
-    super().__init__(indexType=IndexType.IntIndex, path=path)
+    super().__init__(indexType=IndexType.UInt64Index, path=path)
 
   @staticmethod
   def assert_valid_row(row):
