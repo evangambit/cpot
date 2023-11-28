@@ -11,10 +11,10 @@ struct IntPairRow {
   uint64_t docid;
   uint64_t value;
   static IntPairRow smallest() {
-    return IntPairRow{0};
+    return IntPairRow{0, 0};
   }
   static IntPairRow largest() {
-    return IntPairRow{uint32_t(-1)};
+    return IntPairRow{uint32_t(-1), uint32_t(-1)};
   }
   static IntPairRow make(uint32_t docid, uint32_t value) {
     IntPairRow rtn = IntPairRow{};

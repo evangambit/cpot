@@ -75,7 +75,7 @@ struct InvertedIndex {
       return RareRow{uint64_t(-1), Row::largest()};
     }
     friend std::ostream& operator<<(std::ostream& s, RareRow row) {
-      return s << "[RareRow token:" << row.token << " row:" << row.row << "]" << std::endl;
+      return s << "[RareRow token:" << row.token << " row:" << row.row << "]";
     }
   };
   struct RareToCommonIterator : public IteratorInterface<Row> {
@@ -221,17 +221,7 @@ struct InvertedIndex {
   }
 
   std::shared_ptr<IteratorInterface<Row>> iterator(uint64_t token) {
-    TokenRow const *tokenRow = this->header->find(TokenRow{token, 0, 0});
-    if (tokenRow->root == kNullPage) {
-      std::shared_ptr<IteratorInterface<RareRow>> it = SkipTree<RareRow>::iterator(
-        rareTree,
-        RareRow{token, Row::smallest()},
-        RareRow{token, Row::largest()}
-      );
-      return std::make_shared<RareToCommonIterator>(token, it);
-    } else {
-      return SkipTree<Row>::iterator(this->collection(token, tokenRow->root));
-    }
+    return this->iterator(token, Row::smallest());
   }
 
   std::shared_ptr<IteratorInterface<Row>> iterator(uint64_t token, Row lowerBound) {

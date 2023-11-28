@@ -65,17 +65,17 @@ class BaseIndex:
     return _cpot.token_iterator(self.indexType, self.index, token, lower_bound)
 
   def generalized_intersection_iterator(self, iterators):
-    assert lne(iterator) > 0
+    assert len(iterators) > 0
     for iterator in iterators:
       assert isinstance(iterator, tuple)
       assert isinstance(iterator[1], bool)
-    assert sum(1 - t[1] for t in tokens) > 0, 'Must have at least one non-negated token'
+    assert sum(1 - t[1] for t in iterators) > 0, 'Must have at least one non-negated token'
     return _cpot.generalized_intersection_iterator(self.indexType, iterators)
 
   def union_iterator(self, iterators):
     return _cpot.union_iterator(self.indexType, iterators)
 
-  def empty_iterator(self, iterators):
+  def empty_iterator(self):
     return _cpot.empty_iterator(self.indexType)
 
   def fetch_many(self, iterator, limit: int):
