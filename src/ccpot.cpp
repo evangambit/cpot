@@ -11,6 +11,7 @@
 
 #include "common/InvertedIndex.h"
 #include "common/GeneralIntersectionIterator.h"
+#include "common/KVUnionIterator.h"
 #include "UInt64Row.h"
 #include "UInt32PairRow.h"
 #include "UInt64KeyValueRow.h"
@@ -60,8 +61,28 @@ struct IndexNamer<UInt32PairRow> {
 template<class T>
 std::vector<T> ffetch(IteratorInterface<T> *it, size_t limit) {
   std::vector<T> r;
+  if (limit != size_t(-1)) {
+    r.reserve(limit);
+  }
   for (size_t i = 0; i < limit; ++i) {
     if (it->currentValue == T::largest()) {
+      break;
+    }
+    r.push_back(it->currentValue);
+    it->next();
+  }
+  return r;
+}
+
+// Specialization for KVUnionIterator
+template<>
+std::vector<std::pair<uint64_t, std::vector<uint64_t>>> ffetch(IteratorInterface<std::pair<uint64_t, std::vector<uint64_t>>> *it, size_t limit) {
+  std::vector<std::pair<uint64_t, std::vector<uint64_t>>> r;
+  if (limit != size_t(-1)) {
+    r.reserve(limit);
+  }
+  for (size_t i = 0; i < limit; ++i) {
+    if (it->currentValue.first == uint64_t(-1)) {
       break;
     }
     r.push_back(it->currentValue);
@@ -428,6 +449,49 @@ struct Index {
     return vector2npy(rows);
   }
 
+  // Assumes key and value are uint64_t
+  static PyObject *kv_union64(PyObject *indexObj, PyObject *tokenList) {
+    InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+
+    std::vector<uint64_t> tokens;
+    const size_t n = PyList_GET_SIZE(tokenList);
+    for (size_t i = 0; i < n; ++i) {
+      PyObject *obj = PyList_GET_ITEM(tokenList, i);
+      if (!PyLong_CheckExact(obj)) {
+        PyErr_SetString(PyExc_TypeError, "invalid token");
+        return NULL;
+      }
+      uint64_t token = PyLong_AsUnsignedLongLong(obj);
+      tokens.push_back(token);
+    }
+
+    std::vector< std::shared_ptr<IteratorInterface<Row>> > iters;
+    for (uint64_t token : tokens) {
+      iters.push_back(index->iterator(
+        token,
+        Row::smallest()
+      ));
+    }
+
+    auto it = KVUnionIterator<Row, uint64_t, uint64_t>(iters);
+    std::vector<std::pair<uint64_t, std::vector<uint64_t>>> rows = ffetch(&it, size_t(-1));
+
+    // [key, value1, value2, ...]
+    const int kNumColumns = 1 + iters.size();
+
+    npy_intp dims[2] = {(npy_intp)rows.size(), kNumColumns};
+    uint64_t *arr = new uint64_t[rows.size() * kNumColumns];
+    for (size_t i = 0; i < rows.size(); ++i) {
+      arr[i * kNumColumns + 0] = rows[i].first;
+      assert(rows[i].second.size() == iters.size());
+      for (size_t j = 0; j < iters.size(); ++j) {
+        arr[i * kNumColumns + j + 1] = rows[i].second[j];
+      }
+    }
+    std::memcpy(arr, &rows[0], rows.size() * sizeof(uint64_t) * kNumColumns);
+    return PyArray_SimpleNewFromData(1, dims, NPY_UINT64, arr);
+  }
+
 };
 
 static PyObject *newIndex(PyObject *self, PyObject *args) {
@@ -717,10 +781,25 @@ static PyObject *fetch_many(PyObject *self, PyObject *args) {
 }
 
 static PyObject *kv_union(PyObject *self, PyObject *args) {
-  // TODO
-  uint64_t *foo = new uint64_t[10];
-  npy_intp dims[1] = {10};
-  return PyArray_SimpleNewFromData(1, dims, NPY_UINT64, foo);
+  uint64_t rowTypeInt;
+  PyObject* indexObj = NULL;
+  PyObject *tokenList;
+  if(!PyArg_ParseTuple(args, "KOO", &rowTypeInt, &indexObj, &tokenList)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid args");
+    return NULL;
+  }
+
+  switch (RowType(rowTypeInt)) {
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::kv_union64(indexObj, tokenList);
+    case RowType::UInt64Index:
+    case RowType::UInt32PairIndex:
+      PyErr_SetString(PyExc_TypeError, "Row type does not support kv_union (not a key-value row type)");
+      return NULL;
+    default:
+      PyErr_SetString(PyExc_TypeError, "Invalid row type");
+      return NULL;
+  }
 }
 
 static PyMethodDef CcpotMethods[] = {
