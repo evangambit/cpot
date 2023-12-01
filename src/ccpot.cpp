@@ -15,6 +15,8 @@
 #include "UInt32PairRow.h"
 #include "UInt64KeyValueRow.h"
 
+#include "numpy/arrayobject.h"
+
 using namespace cpot;
 
 enum class RowType {
@@ -673,6 +675,13 @@ static PyObject *fetch_many(PyObject *self, PyObject *args) {
   }
 }
 
+static PyObject *kv_union(PyObject *self, PyObject *args) {
+  // TODO
+  uint64_t *foo = new uint64_t[10];
+  npy_intp dims[1] = {10};
+  return PyArray_SimpleNewFromData(1, dims, NPY_UINT64, foo);
+}
+
 static PyMethodDef CcpotMethods[] = {
  { "newIndex", newIndex, METH_VARARGS, "Create a new index" },
  { "currentMemoryUsed", currentMemoryUsed, METH_VARARGS, "The amount of memory currently used" },
@@ -687,6 +696,7 @@ static PyMethodDef CcpotMethods[] = {
  { "union_iterator", union_iterator, METH_VARARGS, "TODO" },
  { "fetch_many", fetch_many, METH_VARARGS, "TODO" },
  { "empty_iterator", empty_iterator, METH_VARARGS, "TODO" },
+ { "kv_union", kv_union, METH_VARARGS, "TODO" },
  { NULL, NULL, 0, NULL }
 };
 
@@ -708,6 +718,8 @@ PyInit_ccpot(void)
     if (m == NULL) {
       return NULL;
     }
+
+    import_array();
 
     return m;
 }

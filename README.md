@@ -18,7 +18,7 @@ Or
 git clone https://github.com/evangambit/cpot.git
 cd cpot
 rm -rf build; rm -rf dist
-python3 setup.py build
+python -m build
 python3 -m pip install .
 ```
 
