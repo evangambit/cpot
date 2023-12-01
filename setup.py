@@ -14,7 +14,11 @@ setup(
     Extension(
       "ccpot",
       sources=["src/ccpot.cpp"],
-      extra_compile_args=["-std=c++2a", "-O3"],
+      extra_compile_args=[
+        "-std=c++2a",
+        "-O3",
+        # "-DNDEBUG",
+      ],
       include_dirs=[
         np.get_include(),
       ],

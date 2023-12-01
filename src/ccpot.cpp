@@ -803,19 +803,19 @@ static PyObject *kv_union(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef CcpotMethods[] = {
- { "newIndex", newIndex, METH_VARARGS, "Create a new index" },
- { "currentMemoryUsed", currentMemoryUsed, METH_VARARGS, "The amount of memory currently used" },
- { "insert", insert, METH_VARARGS, "Insert a token/doc pair" },
- { "remove", remove, METH_VARARGS, "Delete a token/doc pair" },
- { "flush", flush, METH_VARARGS, "Save the current changes to disk" },
- { "count", count, METH_VARARGS, "Returns how many times a token occurs" },
- { "intersect", intersect, METH_VARARGS, "Returns all documents associated with all of the given tokens" },
+ { "newIndex", newIndex, METH_VARARGS, "Create a new index." },
+ { "currentMemoryUsed", currentMemoryUsed, METH_VARARGS, "The amount of memory currently used." },
+ { "insert", insert, METH_VARARGS, "Insert a token/doc pair." },
+ { "remove", remove, METH_VARARGS, "Delete a token/doc pair." },
+ { "flush", flush, METH_VARARGS, "Save the current changes to disk." },
+ { "count", count, METH_VARARGS, "Returns how many times a token occurs." },
+ { "intersect", intersect, METH_VARARGS, "Returns all objects associated with all of the given tokens." },
  { "generalized_intersect", generalized_intersect, METH_VARARGS, "Like intersect but takes (token, isNegated) tuples rather than simply tokens" },
- { "token_iterator", token_iterator, METH_VARARGS, "TODO" },
- { "generalized_intersection_iterator", generalized_intersection_iterator, METH_VARARGS, "TODO" },
- { "union_iterator", union_iterator, METH_VARARGS, "TODO" },
- { "fetch_many", fetch_many, METH_VARARGS, "TODO" },
- { "empty_iterator", empty_iterator, METH_VARARGS, "TODO" },
+ { "token_iterator", token_iterator, METH_VARARGS, "Returns an iterator that loops over all objects associated with a given token." },
+ { "generalized_intersection_iterator", generalized_intersection_iterator, METH_VARARGS, "Given a list of (iter: Iterator, isNegated: bool) tuples, returns an iterator that is the intersection of them all." },
+ { "union_iterator", union_iterator, METH_VARARGS, "Given a list of iterators, returns an iterator that is the union of them all." },
+ { "fetch_many", fetch_many, METH_VARARGS, "Pops N objects off of an iterator" },
+ { "empty_iterator", empty_iterator, METH_VARARGS, "Returns an iterator that contains nothing" },
  { "kv_union", kv_union, METH_VARARGS, "TODO" },
  { NULL, NULL, 0, NULL }
 };
