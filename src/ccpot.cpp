@@ -232,6 +232,9 @@ PyObject *iterator_to_object(std::shared_ptr<IteratorInterface<Row>> ptr) {
 template<class Row>
 std::shared_ptr<IteratorInterface<Row>> object_to_iterator(PyObject *object) {
   auto *wrapper = (IteratorWrapper<Row> *)PyCapsule_GetPointer(object, IndexNamer<Row>::iterator_name());
+  if (wrapper == nullptr) {
+    return std::shared_ptr<IteratorInterface<Row>>(nullptr);
+  }
   return wrapper->ptr;
 }
 
@@ -244,11 +247,19 @@ struct Index {
 
   static PyObject *currentMemoryUsed(PyObject *indexObj) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
     return Py_BuildValue("k", index->currentMemoryUsed());
   }
 
   static PyObject *insert(PyObject *indexObj, uint64_t token, PyObject *rowObj) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
     Row row;
     if (!objectToRow(rowObj, &row)) {
       PyErr_SetString(PyExc_TypeError, "invalid row");
@@ -261,6 +272,10 @@ struct Index {
 
   static PyObject *remove(PyObject *indexObj, uint64_t token, PyObject *rowObj) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
     Row row;
     if (!objectToRow(rowObj, &row)) {
       PyErr_SetString(PyExc_TypeError, "invalid row");
@@ -272,11 +287,19 @@ struct Index {
 
   static PyObject *count(PyObject *indexObj, uint64_t token) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
     return Py_BuildValue("k", index->count(token));
   }
 
   static PyObject *flush(PyObject *indexObj) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
     index->flush();
     Py_INCREF(Py_None);
     return Py_None;
@@ -284,6 +307,10 @@ struct Index {
 
   static PyObject *intersect(PyObject *indexObj, PyObject *tokenList, PyObject *lowerBoundObj, uint64_t limit) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
 
     Row lowerBound;
     if (!objectToRow(lowerBoundObj, &lowerBound)) {
@@ -319,6 +346,10 @@ struct Index {
   static PyObject *generalized_intersect(PyObject *indexObj, PyObject *tokenList, PyObject *lowerBoundObj, uint64_t limit) {
 
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
 
     Row lowerBound;
     if (!objectToRow(lowerBoundObj, &lowerBound)) {
@@ -379,6 +410,10 @@ struct Index {
 
   static PyObject *token_iterator(PyObject *indexObj, uint64_t token, PyObject *lowerBoundObj) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
     Row lowerBound;
     if (!objectToRow(lowerBoundObj, &lowerBound)) {
       return NULL;
@@ -417,6 +452,10 @@ struct Index {
       bool isNegated = PyObject_IsTrue(negatedObj);
 
       iterators.push_back(std::make_pair(object_to_iterator<Row>(iteratorObj), isNegated));
+      if (!iterators.back().first) {
+        PyErr_SetString(PyExc_TypeError, "Object is not an iterator");
+        return NULL;
+      }
     }
 
     auto iterator = std::make_shared<GeneralIntersectionIterator<Row>>(iterators);
@@ -433,6 +472,10 @@ struct Index {
         return NULL;
       }
       iterators.push_back(object_to_iterator<Row>(iteratorObj));
+      if (!iterators.back()) {
+        PyErr_SetString(PyExc_TypeError, "Object is not an iterator");
+        return NULL;
+      }
     }
     auto iterator = std::make_shared<UnionIterator<Row>>(iterators);
     return iterator_to_object<Row>(iterator);
@@ -445,6 +488,10 @@ struct Index {
 
   static PyObject *fetch_many(PyObject *iteratorObj, uint64_t limit) {
     std::shared_ptr<IteratorInterface<Row>> iterator = object_to_iterator<Row>(iteratorObj);
+    if (!iterator) {
+      PyErr_SetString(PyExc_TypeError, "Object is not an iterator");
+      return NULL;
+    }
     std::vector<Row> rows = ffetch(iterator, limit);
     return vector2npy(rows);
   }
@@ -452,6 +499,10 @@ struct Index {
   // Assumes key and value are uint64_t
   static PyObject *kv_union64(PyObject *indexObj, PyObject *tokenList) {
     InvertedIndex<Row> *index = (InvertedIndex<Row> *)PyCapsule_GetPointer(indexObj, IndexNamer<Row>::name());
+    if (index == nullptr) {
+      PyErr_SetString(PyExc_TypeError, "invalid index");
+      return NULL;
+    }
 
     std::vector<uint64_t> tokens;
     const size_t n = PyList_GET_SIZE(tokenList);
