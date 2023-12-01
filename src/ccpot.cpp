@@ -195,14 +195,14 @@ PyObject *vector2npy(const std::vector<UInt32PairRow>& rows) {
   npy_intp dims[2] = {(npy_intp)rows.size(), 2};
   uint32_t *arr = new uint32_t[rows.size() * 2];
   std::memcpy(arr, &rows[0], rows.size() * sizeof(UInt32PairRow));
-  return PyArray_SimpleNewFromData(1, dims, NPY_UINT32, arr);
+  return PyArray_SimpleNewFromData(2, dims, NPY_UINT32, arr);
 }
 
 PyObject *vector2npy(const std::vector<UInt64KeyValueRow>& rows) {
   npy_intp dims[2] = {(npy_intp)rows.size(), 2};
   uint64_t *arr = new uint64_t[rows.size() * 2];
   std::memcpy(arr, &rows[0], rows.size() * sizeof(UInt64KeyValueRow));
-  return PyArray_SimpleNewFromData(1, dims, NPY_UINT64, arr);
+  return PyArray_SimpleNewFromData(2, dims, NPY_UINT64, arr);
 }
 
 
