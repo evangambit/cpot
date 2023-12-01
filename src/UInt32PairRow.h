@@ -8,8 +8,8 @@
 using namespace cpot;
 
 struct UInt32PairRow {
-  uint64_t docid;
-  uint64_t value;
+  uint32_t docid;
+  uint32_t value;
   static UInt32PairRow smallest() {
     return UInt32PairRow{0, 0};
   }
