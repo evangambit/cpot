@@ -5,6 +5,7 @@ from enum import IntEnum
 class IndexType(IntEnum):
   UInt64Index = 1
   UInt32PairIndex = 2
+  UInt64KeyValueIndex = 3
 
   @staticmethod
   def assert_valid(value):
@@ -85,6 +86,20 @@ class BaseIndex:
 class UInt32PairIndex(BaseIndex):
   def __init__(self, path):
     super().__init__(indexType=IndexType.UInt32PairIndex, path=path)
+
+  @staticmethod
+  def assert_valid_row(row):
+    assert len(row) == 2
+    assert isinstance(row[0], int)
+    assert isinstance(row[1], int)
+
+  @staticmethod
+  def smallest_row():
+    return (0, 0)
+
+class UInt64KeyValueIndex(BaseIndex):
+  def __init__(self, path):
+    super().__init__(indexType=IndexType.UInt64KeyValueIndex, path=path)
 
   @staticmethod
   def assert_valid_row(row):

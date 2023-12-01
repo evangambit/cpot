@@ -13,6 +13,7 @@
 #include "common/GeneralIntersectionIterator.h"
 #include "UInt64Row.h"
 #include "UInt32PairRow.h"
+#include "UInt64KeyValueRow.h"
 
 using namespace cpot;
 
@@ -20,7 +21,8 @@ enum class RowType {
   Undefined = 0,
   UInt64Index = 1,
   UInt32PairIndex = 2,
-  Count = 3,
+  UInt64KeyValueIndex = 3,
+  Count = 4,
 };
 
 template<class T>
@@ -134,8 +136,8 @@ bool objectToRow(PyObject *object, UInt32PairRow *row) {
     return false;
   }
   *row = UInt32PairRow{
-    PyLong_AsUnsignedLongLong(docid),
-    PyLong_AsUnsignedLongLong(value)
+    (uint32_t)PyLong_AsUnsignedLong(docid),
+    (uint32_t)PyLong_AsUnsignedLong(value)
   };
   return row;
 }
@@ -398,6 +400,8 @@ static PyObject *newIndex(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::newIndex(nameStr);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::newIndex(nameStr);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::newIndex(nameStr);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -418,6 +422,8 @@ static PyObject *currentMemoryUsed(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::currentMemoryUsed(indexObj);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::currentMemoryUsed(indexObj);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::currentMemoryUsed(indexObj);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -439,6 +445,8 @@ static PyObject *insert(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::insert(indexObj, token, rowObj);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::insert(indexObj, token, rowObj);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::insert(indexObj, token, rowObj);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -460,6 +468,8 @@ static PyObject *remove(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::remove(indexObj, token, rowObj);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::remove(indexObj, token, rowObj);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::remove(indexObj, token, rowObj);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -480,6 +490,8 @@ static PyObject *count(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::count(indexObj, token);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::count(indexObj, token);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::count(indexObj, token);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -499,6 +511,8 @@ static PyObject *flush(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::flush(indexObj);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::flush(indexObj);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::flush(indexObj);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -521,6 +535,8 @@ static PyObject *intersect(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::intersect(indexObj, tokenList, lowerBound, limit);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::intersect(indexObj, tokenList, lowerBound, limit);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::intersect(indexObj, tokenList, lowerBound, limit);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -544,6 +560,8 @@ static PyObject *generalized_intersect(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::generalized_intersect(indexObj, tokenList, lowerBound, limit);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::generalized_intersect(indexObj, tokenList, lowerBound, limit);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::generalized_intersect(indexObj, tokenList, lowerBound, limit);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -565,6 +583,8 @@ static PyObject *token_iterator(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::token_iterator(indexObj, token, lowerBound);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::token_iterator(indexObj, token, lowerBound);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::token_iterator(indexObj, token, lowerBound);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -584,6 +604,8 @@ static PyObject *generalized_intersection_iterator(PyObject *self, PyObject *arg
       return Index<UInt64Row>::generalized_intersection_iterator(tokenList);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::generalized_intersection_iterator(tokenList);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::generalized_intersection_iterator(tokenList);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -602,6 +624,8 @@ static PyObject *union_iterator(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::union_iterator(tokenList);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::union_iterator(tokenList);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::union_iterator(tokenList);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -619,6 +643,8 @@ static PyObject *empty_iterator(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::empty_iterator();
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::empty_iterator();
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::empty_iterator();
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
@@ -639,6 +665,8 @@ static PyObject *fetch_many(PyObject *self, PyObject *args) {
       return Index<UInt64Row>::fetch_many(iteratorObj, limit);
     case RowType::UInt32PairIndex:
       return Index<UInt32PairRow>::fetch_many(iteratorObj, limit);
+    case RowType::UInt64KeyValueIndex:
+      return Index<UInt64KeyValueRow>::fetch_many(iteratorObj, limit);
     default:
       PyErr_SetString(PyExc_TypeError, "Invalid row type");
       return NULL;
