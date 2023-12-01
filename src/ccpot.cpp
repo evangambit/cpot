@@ -75,12 +75,16 @@ std::vector<T> ffetch(std::shared_ptr< IteratorInterface<T> > it, size_t limit) 
   return ffetch(it.get(), limit);
 }
 
-template<class Row>
-bool objectToRow(PyObject *object, Row *row) {
-  return false;
-}
+// template<class Row>
+// bool objectToRow(PyObject *object, Row *row) {
+//   return false;
+// }
 
-template<>
+// template<class Row>
+// PyObject *rowToObject(Row row) {
+//   return NULL;
+// }
+
 bool objectToRow(PyObject *object, UInt64Row *row) {
   if (!PyLong_CheckExact(object)) {
     PyErr_SetString(PyExc_TypeError, "row is not an int");
@@ -90,34 +94,14 @@ bool objectToRow(PyObject *object, UInt64Row *row) {
   return true;
 }
 
-template<class Row>
-PyObject *rowToObject(Row row) {
-  return NULL;
-}
-
-template<>
 PyObject *rowToObject(UInt64Row row) {
   return Py_BuildValue("K", row.val);
 }
 
-template<>
 PyObject *rowToObject(UInt32PairRow row) {
   return Py_BuildValue("(ll)", row.docid, row.value);
 }
 
-template<class Row>
-PyObject *vector2obj(const std::vector<Row>& rows) {
-  PyObject *list = PyList_New(rows.size());
-  if (list == NULL) {
-    return NULL;
-  }
-  for (size_t i = 0; i < rows.size(); ++i) {
-    PyList_SetItem(list, i, rowToObject(rows[i]));
-  }
-  return list;
-}
-
-template<>
 bool objectToRow(PyObject *object, UInt32PairRow *row) {
   if (!PyTuple_CheckExact(object)) {
     PyErr_SetString(PyExc_TypeError, "row is not a tuple");
@@ -143,6 +127,63 @@ bool objectToRow(PyObject *object, UInt32PairRow *row) {
   };
   return row;
 }
+
+PyObject *rowToObject(UInt64KeyValueRow row) {
+  return Py_BuildValue("(KK)", row.key, row.value);
+}
+
+bool objectToRow(PyObject *object, UInt64KeyValueRow *row) {
+  if (!PyTuple_CheckExact(object)) {
+    PyErr_SetString(PyExc_TypeError, "row is not a tuple");
+    return false;
+  }
+  if (PyTuple_Size(object) != 2) {
+    PyErr_SetString(PyExc_TypeError, "row has incorrect length");
+    return false;
+  }
+  PyObject *docid = PyTuple_GetItem(object, 0);
+  PyObject *value = PyTuple_GetItem(object, 1);
+  if (!PyLong_CheckExact(docid)) {
+    PyErr_SetString(PyExc_TypeError, "docid is not an int");
+    return false;
+  }
+  if (!PyLong_CheckExact(value)) {
+    PyErr_SetString(PyExc_TypeError, "value is not an int");
+    return false;
+  }
+  *row = UInt64KeyValueRow{
+    PyLong_AsUnsignedLongLong(docid),
+    PyLong_AsUnsignedLongLong(value)
+  };
+  return row;
+}
+
+// We could potentially use something like https://stackoverflow.com/a/76623718
+// to "steal" the vector's data pointer, avoiding the O(n) std::memcopy
+// operation. Given that memcpy is probably not the bottleneck, this is
+// probably not worth the smell/complexity.
+
+PyObject *vector2npy(const std::vector<UInt64Row>& rows) {
+  npy_intp dims[1] = {(npy_intp)rows.size()};
+  uint64_t *arr = new uint64_t[rows.size()];
+  std::memcpy(arr, &rows[0], rows.size() * sizeof(UInt64Row));
+  return PyArray_SimpleNewFromData(1, dims, NPY_UINT64, arr);
+}
+
+PyObject *vector2npy(const std::vector<UInt32PairRow>& rows) {
+  npy_intp dims[2] = {(npy_intp)rows.size(), 2};
+  uint32_t *arr = new uint32_t[rows.size() * 2];
+  std::memcpy(arr, &rows[0], rows.size() * sizeof(UInt32PairRow));
+  return PyArray_SimpleNewFromData(1, dims, NPY_UINT32, arr);
+}
+
+PyObject *vector2npy(const std::vector<UInt64KeyValueRow>& rows) {
+  npy_intp dims[2] = {(npy_intp)rows.size(), 2};
+  uint64_t *arr = new uint64_t[rows.size() * 2];
+  std::memcpy(arr, &rows[0], rows.size() * sizeof(UInt64KeyValueRow));
+  return PyArray_SimpleNewFromData(1, dims, NPY_UINT64, arr);
+}
+
 
 template<class Row>
 static void destroy_index_object(PyObject *indexObj) {
@@ -251,7 +292,7 @@ struct Index {
 
     IntersectionIterator<Row> it(iters);
 
-    return vector2obj(ffetch(&it, limit));
+    return vector2npy(ffetch(&it, limit));
   }
 
   static PyObject *generalized_intersect(PyObject *indexObj, PyObject *tokenList, PyObject *lowerBoundObj, uint64_t limit) {
@@ -312,7 +353,7 @@ struct Index {
 
     GeneralIntersectionIterator<Row> it(iters);
 
-    return vector2obj(ffetch(&it, limit));
+    return vector2npy(ffetch(&it, limit));
   }
 
   static PyObject *token_iterator(PyObject *indexObj, uint64_t token, PyObject *lowerBoundObj) {
@@ -384,7 +425,7 @@ struct Index {
   static PyObject *fetch_many(PyObject *iteratorObj, uint64_t limit) {
     std::shared_ptr<IteratorInterface<Row>> iterator = object_to_iterator<Row>(iteratorObj);
     std::vector<Row> rows = ffetch(iterator, limit);
-    return vector2obj(rows);
+    return vector2npy(rows);
   }
 
 };
