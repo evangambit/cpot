@@ -20,6 +20,9 @@ setup(
       ],
     ),
   ],
+  install_requires=[
+    'numpy',
+  ],
   # Note that "headers" works, but is undocumented, (but would probably be more
   # appropriate if it wasn't).
   package_data = {
