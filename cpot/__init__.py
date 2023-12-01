@@ -31,6 +31,9 @@ class BaseIndex:
   def remove(self, token, obj):
     return _cpot.remove(self.indexType, self.index, token, obj)
 
+  def count(self, token):
+    return _cpot.count(self.indexType, self.index, token)
+
   def flush(self):
     _cpot.flush(self.indexType, self.index)
 
