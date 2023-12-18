@@ -1,6 +1,6 @@
 # Cpot
 
-A simple, single-process, zero-dependency inverted index that works for 10 million documents.
+A simple, single-process, zero-dependency, high performance inverted index.
 
 I used to use Sqlite3 for this, but found it's performance was very lacking.
 
@@ -17,7 +17,7 @@ Or
 ```bash
 git clone https://github.com/evangambit/cpot.git
 cd cpot
-rm -rf build; rm -rf dist
+rm -rf build;  # Optional
 python3 setup.py build
 python3 -m pip install .
 ```

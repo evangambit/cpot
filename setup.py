@@ -17,7 +17,7 @@ setup(
       extra_compile_args=[
         "-std=c++2a",
         "-O3",
-        # "-DNDEBUG",
+        "-DNDEBUG",
       ],
       include_dirs=[
         np.get_include(),
