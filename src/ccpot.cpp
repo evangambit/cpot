@@ -539,8 +539,7 @@ struct Index {
         arr[i * kNumColumns + j + 1] = rows[i].second[j];
       }
     }
-    std::memcpy(arr, &rows[0], rows.size() * sizeof(uint64_t) * kNumColumns);
-    return PyArray_SimpleNewFromData(1, dims, NPY_UINT64, arr);
+    return PyArray_SimpleNewFromData(2, dims, NPY_UINT64, arr);
   }
 
 };

@@ -114,6 +114,9 @@ class UInt64KeyValueIndex(BaseIndex):
   def smallest_row():
     return (0, 0)
 
+  def kv_union(self, tokens):
+    return _cpot.kv_union(self.indexType, self.index, tokens)
+
 class UInt64Index(BaseIndex):
   def __init__(self, path):
     super().__init__(indexType=IndexType.UInt64Index, path=path)
