@@ -153,7 +153,7 @@ struct SkipTree {
         this->_print_node(stream, node);
         assert(false);
       }
-      if (locs.contains(node->self)) {
+      if (locs.find(node->self) != locs.end()) {
         std::cout << "Cycle! " << node->self << std::endl;
         assert(false);
       }
@@ -203,7 +203,7 @@ struct SkipTree {
     if (result.first == nullptr) {
       return nullptr;
     }
-    if (query != result.first->value.leaf.rows[result.second]) {
+    if (!(query == result.first->value.leaf.rows[result.second])) {
       return nullptr;
     }
     Node *node = pageManager_->load_and_modify_page(result.first->self);
@@ -391,7 +391,7 @@ struct SkipTree {
     Row const *end = vals + knode->length;
     Row const *it = std::lower_bound(vals, end, row);
     size_t idx = it - vals;
-    if (it > vals && (it >= end || *it != row)) {
+    if (it > vals && (it >= end || !(*it == row))) {
       idx--;
     }
 
@@ -402,7 +402,7 @@ struct SkipTree {
     bool result = this->_insert(kChild, row);
     assert(knode->depth < 20);
 
-    if (kChild->get_row(0) != knode->get_row(idx)) {
+    if (!(kChild->get_row(0) == knode->get_row(idx))) {
       Node *parent = pageManager_->load_and_modify_page(knode->self);
       assert(knode->depth < 20);
       assert(parent->depth < 20);
@@ -554,7 +554,7 @@ struct SkipTree {
     size_t idx = it - vals;
 
     if (knode->is_leaf()) {
-      if (it >= end || *it != row) {
+      if (it >= end || !(*it == row)) {
         return false;
       }
       Node *node = pageManager_->load_and_modify_page(knode->self);
@@ -566,7 +566,7 @@ struct SkipTree {
       return true;
     }
 
-    if (it > vals && (it >= end || *it != row)) {
+    if (it > vals && (it >= end || !(*it == row))) {
       idx--;
     }
 
@@ -579,7 +579,7 @@ struct SkipTree {
       Node *parent = pageManager_->load_and_modify_page(knode->self);
       Node *child = pageManager_->load_and_modify_page(kChild->self);
       this->_handle_too_small_child(parent, child, idx, debug);
-    } else if (kChild->get_row(0) != knode->get_row(idx)) {
+    } else if (!(kChild->get_row(0) == knode->get_row(idx))) {
       Node *parent = pageManager_->load_and_modify_page(knode->self);
       parent->set_row(idx, kChild->get_row(0));
     }

@@ -46,7 +46,7 @@ struct DiskPageManager : public PageManager<Page> {
       std::raise(SIGSEGV);
     }
     #endif
-    if (!pages_.contains(loc)) {
+    if (pages_.find(loc) == pages_.end()) {
       std::shared_ptr<MemoryBlock<Page>> block = std::make_shared<MemoryBlock<Page>>(loc);
       fseek(file_, loc * sizeof(Page), SEEK_SET);
       fread(block->data, sizeof(Page), 1, file_);

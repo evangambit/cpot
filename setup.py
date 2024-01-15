@@ -15,7 +15,7 @@ setup(
       "ccpot",
       sources=["src/ccpot.cpp"],
       extra_compile_args=[
-        "-std=c++2a",
+        "-std=c++20",
         "-O3",
         "-DNDEBUG",
       ],

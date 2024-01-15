@@ -158,7 +158,7 @@ struct InvertedIndex {
 
     if (tokenRow->count > kRareThreshold && tokenRow->root == kNullPage) {
       // Migrate from rare to common.
-      assert(!collections.contains(token));
+      assert(collections.find(token) == collections.end());
       auto newTree = std::make_shared<SkipTree<Row>>(this->pageManager, PageLoc(-1));
       tokenRow->root = newTree->rootLoc_;
       collections.insert(std::make_pair(token, newTree));
@@ -263,7 +263,7 @@ struct InvertedIndex {
 
   std::shared_ptr<SkipTree<Row>> collection(Token token, PageLoc root) {
     assert(root != kNullPage);
-    if (!collections.contains(token)) {
+    if (collections.find(token) == collections.end()) {
       collections.insert(std::make_pair(token, std::make_shared<SkipTree<Row>>(this->pageManager, root)));
     }
     return collections.at(token);
