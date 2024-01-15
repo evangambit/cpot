@@ -1,6 +1,7 @@
 #ifndef ITERATOR_H
 #define ITERATOR_H
 
+#include <memory>
 #include <vector>
 
 namespace cpot {
@@ -106,8 +107,6 @@ struct UnionIterator : public IteratorInterface<Row> {
     this->skip_to(Row::smallest());
   }
   Row skip_to(Row row) override {
-    Row result = Row::smallest();
-
     Row lowest = Row::largest();
     for (size_t i = 0; i < iters.size(); ++i) {
       Row v = iters[i]->skip_to(row);
