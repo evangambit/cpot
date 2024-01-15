@@ -4,6 +4,7 @@
 #include "PageManager.h"
 #include "Iterator.h"
 
+#include <cstring>
 #include <cstdint>
 
 #include <algorithm>
